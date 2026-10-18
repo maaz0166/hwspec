@@ -1,0 +1,22 @@
+# Build output
+build/
+out/
+cmake-build-*/
+*.exe
+*.obj
+*.pdb
+
+# Visual Studio and editors
+.vs/
+.vscode/
+*.user
+
+# Python packaging
+dist/
+*.egg-info/
+__pycache__/
+python/build/
+
+# Secrets: never commit tokens
+.pypirc
+*.token

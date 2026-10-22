@@ -1,6 +1,6 @@
 """Inspect one test process's console and submit Enter after verifying its pause.
 
-Run only through verify_python_uac.ps1, which validates the process command line.
+Run through a UAC verification script, which validates the process command line.
 Uses the Windows console APIs; no desktop-wide key events are generated.
 """
 import argparse
@@ -24,6 +24,10 @@ class BufferInfo(ct.Structure):
                 ("window", Rect), ("maximum", Coord)]
 
 
+class SelectionInfo(ct.Structure):
+    _fields_ = [("flags", wt.DWORD), ("anchor", Coord), ("selection", Rect)]
+
+
 class KeyEvent(ct.Structure):
     _fields_ = [("down", wt.BOOL), ("repeat", wt.WORD), ("key", wt.WORD),
                 ("scan", wt.WORD), ("character", wt.WCHAR), ("state", wt.DWORD)]
@@ -37,7 +41,7 @@ class InputRecord(ct.Structure):
     _fields_ = [("kind", wt.WORD), ("event", Event)]
 
 
-def inspect(process_id):
+def inspect(process_id, section="CPU", resume_selection=False):
     kernel = ct.WinDLL("kernel32", use_last_error=True)
     security = ct.WinDLL("advapi32", use_last_error=True)
     kernel.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
@@ -53,6 +57,8 @@ def inspect(process_id):
     kernel.WaitForSingleObject.argtypes = [wt.HANDLE, wt.DWORD]
     kernel.WaitForSingleObject.restype = wt.DWORD
     kernel.GetExitCodeProcess.argtypes = [wt.HANDLE, ct.POINTER(wt.DWORD)]
+    kernel.GetConsoleSelectionInfo.argtypes = [ct.POINTER(SelectionInfo)]
+    kernel.GetConsoleWindow.restype = wt.HWND
     security.OpenProcessToken.argtypes = [wt.HANDLE, wt.DWORD, ct.POINTER(wt.HANDLE)]
     security.GetTokenInformation.argtypes = [wt.HANDLE, ct.c_int, ct.c_void_p, wt.DWORD, ct.POINTER(wt.DWORD)]
 
@@ -73,6 +79,22 @@ def inspect(process_id):
         kernel.FreeConsole()
         require(kernel.AttachConsole(process_id))
         attached = True
+        selection = SelectionInfo()
+        require(kernel.GetConsoleSelectionInfo(ct.byref(selection)))
+        selection_resumed = False
+        if selection.flags:
+            if not resume_selection:
+                raise RuntimeError("Console selection mode is active; press Esc in the test window")
+            # Escape is sent only to the attached test console, never the desktop.
+            user = ct.WinDLL("user32", use_last_error=True)
+            user.PostMessageW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
+            require(user.PostMessageW(kernel.GetConsoleWindow(), 0x0100, 0x1B, 0))
+            require(user.PostMessageW(kernel.GetConsoleWindow(), 0x0101, 0x1B, 0))
+            time.sleep(0.5)
+            require(kernel.GetConsoleSelectionInfo(ct.byref(selection)))
+            if selection.flags:
+                raise RuntimeError("Console selection mode is still active; press Esc in the test window")
+            selection_resumed = True
         output = kernel.CreateFileW("CONOUT$", 0x80000000, 3, None, 3, 0, None)
         require(output not in (None, ct.c_void_p(-1).value))
         info = BufferInfo()
@@ -90,7 +112,7 @@ def inspect(process_id):
             time.sleep(0.1)
         lines = [text[i:i + info.size.x].rstrip() for i in range(0, len(text), info.size.x)]
         sections = [line for line in lines if line in ("CPU", "Memory", "OS", "GPU", "Disk", "Network", "Battery")]
-        if sections != ["CPU"] or "Press Enter to close..." not in text or "Traceback" in text:
+        if sections != [section] or "Press Enter to close..." not in text or "Traceback" in text:
             raise RuntimeError("Unexpected elevated console contents: " + repr([line for line in lines if line]))
         input_handle = kernel.CreateFileW("CONIN$", 0x40000000, 3, None, 3, 0, None)
         require(input_handle not in (None, ct.c_void_p(-1).value))
@@ -107,6 +129,7 @@ def inspect(process_id):
         if code.value != 0:
             raise RuntimeError("Elevated process exited with code " + str(code.value))
         return {"passed": True, "pid": process_id, "elevated": True,
+                "selection_resumed": selection_resumed,
                 "selected_sections": sections, "pause_observed": True,
                 "enter_submitted": True, "exit_code": code.value,
                 "console_lines": [line for line in lines if line]}
@@ -122,9 +145,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pid", type=int, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--section", choices=("CPU", "Disk"), default="CPU")
+    parser.add_argument("--resume-selection", action="store_true")
     args = parser.parse_args()
     try:
-        result = inspect(args.pid)
+        result = inspect(args.pid, args.section, args.resume_selection)
     except Exception as error:
         result = {"passed": False, "error": str(error), "pid": args.pid}
     args.report.write_text(json.dumps(result, indent=2), encoding="utf-8")

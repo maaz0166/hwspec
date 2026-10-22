@@ -29,9 +29,9 @@ they cannot substitute for those two physical machines.
 | Windows version, x64 | Windows 11 Pro x64, 26100.6584 | Not yet verified |
 | MSVC build and CTest | MSVC + MinGW Release builds and CTest pass | Not yet verified |
 | JSON smoke script | Passed | Not yet verified |
-| Normal mode matches system UI | CIM comparisons pass; UI pending | Not yet verified |
-| CPU detailed fields / Unknown cases | Runs; manual comparison pending | Not yet verified |
-| GPU / disk / network detailed fields | Runs; manual comparison pending | Not yet verified |
+| Normal mode matches system UI | CIM/System Information and Task Manager UI comparisons pass for comparable fields | Not yet verified |
+| CPU detailed fields / Unknown cases | Task Manager cache/core/clock comparison passes after fixes; conservative firmware Unknown retained | Not yet verified |
+| GPU / disk / network detailed fields | Task Manager model/type/driver/address comparisons pass; source distinctions documented | Not yet verified |
 | Battery capacity & health (laptop) | Matches Windows battery report | Not yet verified |
 | JSON redirected / no extra text | Passed | Not yet verified |
 
@@ -140,6 +140,58 @@ Both corrected MSVC and MinGW builds pass all seven tests and JSON smoke checks.
 The updated acceptance runner adds a hypervisor/virtualization consistency check
 on hosts with a hypervisor (108 standard-user and 109 elevated checks on this
 laptop, all passing). The final kit includes this corrected executable.
+
+### Task Manager acceptance follow-up: 2026-10-22
+
+Read the actual Task Manager Performance pages using elevated Windows UI
+Automation, rather than substituting CIM data for the UI. Local captures of CPU,
+Memory, Disk 0, Wi-Fi and GPU 0 and their comparison results are under
+`build/local-acceptance-followup/`. Sixteen comparisons against the corrected
+native executable passed:
+
+- CPU model, four physical/eight logical cores and rounded 1.90 GHz base speed.
+- CPU cache totals: L1 256 KiB, L2 1 MiB and L3 6 MiB. The collector previously
+  selected the largest individual cache at each level (32 KiB/256 KiB here).
+  It now sums each distinct Windows `RelationCache` record once, including split
+  instruction/data caches and counting a shared cache once. Regression tests
+  cover those cases and missing cache data.
+- Installed RAM 8 GiB, visible RAM rounded to 7.8 GiB and configured speed 2400.
+  WMI `Speed` reports the module's rated 2667 value; `ConfiguredClockSpeed`
+  reports 2400, matching Task Manager's numeric value. The collector now uses
+  the configured property, with Unknown/null for absent, zero or invalid data.
+  The existing `speed_mhz` interface and Windows-documented MHz units are
+  preserved; Task Manager labels the value MT/s. No conversion is guessed.
+- Disk model and SSD/NVMe type, GPU name/driver/shared capacity, and Wi-Fi IPv4.
+  Disk physical capacity and logical volume capacities are different properties;
+  no equality between them is asserted. Live utilization and available-memory
+  values change between samples and are not compared for exact equality.
+
+Task Manager says virtualization Enabled, while the firmware availability API
+under the hypervisor remains inconclusive. Keep Unknown/null as documented
+above. Task Manager omits a dedicated GPU memory figure on this integrated GPU;
+the DXGI versus WMI dedicated-memory discrepancy remains a source distinction.
+
+Both MSVC and MinGW rebuilt successfully with these corrections and passed all
+seven CTests and both JSON smoke checks. The updated runner additionally checks
+configured RAM speed against CIM: 109 standard-user and 110 elevated checks
+passed with zero failures on this laptop. The corrected MSVC executable is
+`build/msvc/acceptance/hwspec.exe`, SHA-256
+`335B9755CEE1AF76E5BCD3E7B7310FC5605B14DE4C8C7B207C7A3223D6FBC5A3`.
+The earlier UAC test console held the previous executable open, so a separate
+runtime directory was used for linking.
+
+The refreshed `build/hwspec-m2-m3-validation.zip` contains this executable and
+its runtime DLLs, the updated runner and acceptance instructions, with no local
+captures. These source/native corrections are newer than the published Python
+0.4.0 artifacts; those registry files were not replaced or republished.
+
+**Still required:** a second physical Windows PC, including all normal/detail
+sections and comparisons. Intel/AMD, Windows 10 and VM coverage in the broader
+test plan is not established by repeating this laptop's checks. M2 is not fully
+accepted until the missing machine evidence is supplied.
+
+References: [Windows cache records](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-cache_relationship),
+[configured memory speed](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-physicalmemory#configuredclockspeed).
 
 ## Intentional scope boundaries and limitations
 

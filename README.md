@@ -7,8 +7,10 @@ The name **hwspec** is final; older project-plan examples saying `sysinfo` are p
 and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
 local build/repair and installed-package validation. TestPyPI and PyPI each
 passed a fresh CPython 3.12 installation and all 15 Python tests; see
-[M4 validation](docs/M4_VALIDATION.md). Remaining second-PC, UI and user-observed
-UAC checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
+[M4 validation](docs/M4_VALIDATION.md). Task Manager comparison subsequently found
+and fixed native CPU cache totals and configured RAM speed; these newer source
+fixes are not in the published Python 0.4.0 artifacts. Remaining second-PC and
+user-observed UAC rejection checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
 [M3 validation](docs/M3_VALIDATION.md). M5/M6 have not started.
 
 ## Commands

@@ -88,6 +88,13 @@ Record-Check 'CIM CPU logical cores' ($captures['cpu-normal'].logical_cores -eq 
 Record-Check 'CIM CPU physical cores' ($captures['cpu-normal'].physical_cores -eq ($processors | Measure-Object NumberOfCores -Sum).Sum)
 Record-Check 'CIM CPU name' (@($processors | Where-Object { $_.Name.Trim() -eq $captures['cpu-normal'].name }).Count -gt 0)
 Record-Check 'CIM visible memory' ($captures['mem-normal'].total_bytes -eq $system.TotalPhysicalMemory)
+$memoryRows = @(Get-CimInstance Win32_PhysicalMemory)
+foreach ($module in $captures['mem-detail'].modules) {
+    $reference = $memoryRows | Where-Object { $_.DeviceLocator -eq $module.slot } | Select-Object -First 1
+    if ($reference) {
+        Record-Check 'CIM configured RAM speed' $(if ($reference.ConfiguredClockSpeed) { $module.speed_mhz -eq $reference.ConfiguredClockSpeed } else { $null -eq $module.speed_mhz })
+    }
+}
 Record-Check 'CIM OS build plus revision' ($captures['os-normal'].build -eq ($os.BuildNumber + '.' + $revision))
 if ($system.HypervisorPresent) {
     Record-Check 'hypervisor does not imply disabled firmware virtualization' ($captures['cpu-detail'].virtualization_enabled -ne $false)

@@ -225,12 +225,18 @@ Normal Git pushes and pull requests do not publish packages.
 
 ## Remaining acceptance work
 
+- Later M2 Task Manager comparison found source/native cache-total and configured
+  RAM-speed corrections, recorded in [M2 validation](./M2_VALIDATION.md). They
+  postdate this published 0.4.0 release. The original six-version wheel results
+  and registry hashes describe the published bytes; no replacement upload or
+  new Python package release was performed for these later changes.
 - All six local wheel builds/tests passed; the GitHub-hosted workflow has not
   yet been observed running against this change.
 - Python UAC, preserved virtual environment/arguments, pause and Enter-to-close
   passed the live console integration check above.
-- Second-PC, Task Manager, GPU-source discrepancies and user-observed native
-  UAC/close-on-Enter checks remain tracked in M2/M3 validation.
+- Second-PC and actual UAC rejection remain pending in M2/M3 validation.
+  Task Manager comparison and native pause/Enter-to-close have since passed;
+  GPU-source distinctions remain documented without inventing matching values.
 - M5 installers, releases and other distribution channels have not started.
 
 ## Build-system references

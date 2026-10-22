@@ -1,6 +1,7 @@
 #include "hwspec/collectors.hpp"
 #include "registry.hpp"
 #include "wmi.hpp"
+#include "memory_state.hpp"
 #include <cstdlib>
 #include <limits>
 #include <string>
@@ -29,8 +30,8 @@ MemInfo collect_mem(bool detail){
     info.available_bytes=static_cast<std::uint64_t>(status.ullAvailPhys);
   }
   if(!detail)return info;
-  for(const auto& row:win::wmi_query(L"SELECT DeviceLocator,Capacity,SMBIOSMemoryType,MemoryType,Speed,Manufacturer FROM Win32_PhysicalMemory",
-         {"DeviceLocator","Capacity","SMBIOSMemoryType","MemoryType","Speed","Manufacturer"})){
+  for(const auto& row:win::wmi_query(L"SELECT DeviceLocator,Capacity,SMBIOSMemoryType,MemoryType,ConfiguredClockSpeed,Manufacturer FROM Win32_PhysicalMemory",
+         {"DeviceLocator","Capacity","SMBIOSMemoryType","MemoryType","ConfiguredClockSpeed","Manufacturer"})){
     MemoryModule module;
     module.slot=as_string(row,"DeviceLocator");module.size_bytes=as_u64(row,"Capacity");
     module.manufacturer=as_string(row,"Manufacturer");
@@ -38,9 +39,7 @@ MemInfo collect_mem(bool detail){
     const auto oldtype=as_u64(row,"MemoryType");
     if(type)module.type=ram_type(*type);
     if(!module.type && oldtype)module.type=ram_type(*oldtype);
-    if(const auto speed=as_u64(row,"Speed")){
-      if(*speed>0 && *speed<std::numeric_limits<unsigned>::max())module.speed_mhz=static_cast<unsigned>(*speed);
-    }
+    module.speed_mhz=win::configured_memory_speed(as_u64(row,"ConfiguredClockSpeed"));
     info.modules.push_back(std::move(module));
   }
   std::uint64_t total_allocated=0,total_used=0;bool has_pagefile=false;

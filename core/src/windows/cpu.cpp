@@ -128,7 +128,7 @@ void read_caches(CpuInfo& info){
       const auto& cache=record->Cache;
       auto* target=cache.Level==1?&info.l1_cache_bytes:cache.Level==2?&info.l2_cache_bytes:
                    cache.Level==3?&info.l3_cache_bytes:nullptr;
-      if(target && (!*target || **target<cache.CacheSize))*target=cache.CacheSize;
+      if(target)win::accumulate_cache_bytes(*target,cache.CacheSize);
     }
     offset+=record->Size;
   }

@@ -83,7 +83,7 @@ Run the same native executable in these contexts and record actual results:
 | Standard user, JSON | `hwspec --disk -d --json`; valid JSON, requires_admin | Tested locally |
 | Standard user, interactive | `hwspec --disk -d`; blank skips; 3 cancels | Tested locally in native console; explicit 1 covered by policy tests |
 | Interactive pause | `hwspec --cpu --pause`; output then Enter to close | Tested locally in native console |
-| Reopen / explicit elevation | Choice 2 and `hwspec --disk -d --elevate`; UAC, same sections, child pauses | Native explicit elevation launched; child arguments inspected; choice 2 covered by policy tests |
+| Reopen / explicit elevation | Choice 2 and `hwspec --disk -d --elevate`; UAC, same sections, child pauses | Native explicit elevation/console/Enter-to-close passed live integration test; choice 2 covered by policy tests |
 | UAC rejection | Decline dialog; parent continues with requires admin | Native fallback returned 0 with requires admin; user confirmation of No versus unavailable elevation pending |
 | Elevated, JSON and text | No prompt; prediction booleans or Unknown on unsupported hardware | Native elevated piped text and JSON passed; this device/provider is unsupported and reports Unknown |
 | Elevated skip | `hwspec --disk -d --skip-admin --json`; requires_admin | Native elevated check passed |
@@ -134,6 +134,40 @@ Both summaries identify SHA-256
 Virtualization is now null on this hypervisor host; elevated SMART remains
 unknown with the independent provider query reporting unsupported. This is
 the executable included in the final validation kit.
+
+## Completed native console acceptance follow-up: 2026-10-22
+
+[verify_native_uac.ps1](../tests/verify_native_uac.ps1) passed against the corrected
+MSVC executable under `build/msvc/acceptance/`, SHA-256
+`335B9755CEE1AF76E5BCD3E7B7310FC5605B14DE4C8C7B207C7A3223D6FBC5A3`:
+
+```powershell
+./tests/verify_native_uac.ps1 -Executable ./build/msvc/acceptance/hwspec.exe -Python ./build/python-build-env/Scripts/python.exe
+```
+
+The standard-user parent returned 0 with empty stdout/stderr. An elevated
+observer checked the exact executable and preserved `--disk -d --pause`
+arguments. Its console inspector verified an elevated token, only Disk output,
+Unknown SMART health, and `Press Enter to close...`; it sent Enter to that
+console's input buffer and verified exit 0. Results are under
+`build/native-uac-validation/20261022-122746-210/`. No desktop-wide key input
+was used. The corrected build also passed the updated 109 standard-user and
+110 elevated acceptance checks.
+
+Earlier observer attempts are retained as failures: one missed the quoted
+`"-d"` argument; another encountered an empty console while Windows selection
+mode paused output. The helper now matches quoted flags and detects selection
+mode. The native runner explicitly allows Escape only to its verified test
+console before inspecting it. A recovery check passed, followed by the full
+corrected-build test above with no selection recovery needed. These were test
+observer issues, not evidence of an application collection failure.
+
+A new rejection attempt instead returned a successful launch (empty parent
+output), so it did **not** verify UAC rejection. Its results are retained under
+`build/native-uac-rejection/`; user confirmation of actually choosing No remains
+pending. Do not mark M3 completely accepted on that evidence. The previous
+fallback result and automated policy tests remain valid but do not establish
+an observed No-dialog interaction.
 
 ## Implementation references
 

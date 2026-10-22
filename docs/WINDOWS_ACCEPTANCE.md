@@ -8,10 +8,14 @@ again from a terminal explicitly opened as administrator.
 From the repository:
 
 ```powershell
-./tests/verify_windows.ps1 -Executable ./build/msvc/Release/hwspec.exe
+./tests/verify_windows.ps1 -Executable ./build/msvc/acceptance/hwspec.exe
 ```
 
 Or extract the validation ZIP, open PowerShell in the extracted directory, and run:
+
+The current refreshed kit is `build/hwspec-m2-m3-validation.zip`. It includes
+the cache-total and configured-RAM-speed corrections made after Python 0.4.0
+publication. Testing the existing PyPI wheel does not exercise those fixes.
 
 ```powershell
 powershell -NoProfile -File ./verify_windows.ps1 -Executable ./hwspec.exe -OutputDirectory ./results/standard

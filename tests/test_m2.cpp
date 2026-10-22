@@ -3,6 +3,7 @@
 #include "hwspec/json.hpp"
 #include "hwspec/sections.hpp"
 #include "../core/src/windows/cpu_state.hpp"
+#include "../core/src/windows/memory_state.hpp"
 #include <string>
 
 using namespace hwspec;
@@ -54,6 +55,23 @@ void memory_details(){
   const auto j=json_mem(m,true);
   CHECK(has(j,"\"modules\":[{"));CHECK(has(j,"\"used_bytes\":8589934592"));
 }
+void hardware_detail_sources(){
+  CpuInfo cpu;
+  win::accumulate_cache_bytes(cpu.l1_cache_bytes,0);
+  CHECK(!cpu.l1_cache_bytes);
+  // Four cores, each with separate 32 KiB data and instruction caches.
+  for(int i=0;i<8;++i)win::accumulate_cache_bytes(cpu.l1_cache_bytes,32*1024);
+  for(int i=0;i<4;++i)win::accumulate_cache_bytes(cpu.l2_cache_bytes,256*1024);
+  win::accumulate_cache_bytes(cpu.l3_cache_bytes,6*1024*1024); // shared once
+  CHECK(cpu.l1_cache_bytes==std::optional<std::uint64_t>(256*1024));
+  CHECK(cpu.l2_cache_bytes==std::optional<std::uint64_t>(1024*1024));
+  CHECK(cpu.l3_cache_bytes==std::optional<std::uint64_t>(6*1024*1024));
+  CHECK(has(json_cpu(cpu,true),"\"l1_cache_bytes\":262144"));
+  CHECK(!win::configured_memory_speed(std::nullopt));
+  CHECK(!win::configured_memory_speed(0));
+  CHECK(!win::configured_memory_speed(1ULL<<32));
+  CHECK(win::configured_memory_speed(2400)==std::optional<unsigned>(2400));
+}
 void gpu_and_disks(){
   GpuInfo g;g.adapters.push_back(GpuAdapter{});
   CHECK(has(json_gpu(g,false),"\"dedicated_bytes\":null"));
@@ -82,6 +100,6 @@ void json_escaping(){
 }
 } // namespace
 int main(){
-  section_registry();cpu_details();virtualization_with_hypervisor();memory_details();gpu_and_disks();batteries();json_escaping();
+  section_registry();cpu_details();virtualization_with_hypervisor();memory_details();hardware_detail_sources();gpu_and_disks();batteries();json_escaping();
   return finish();
 }

@@ -15,6 +15,7 @@ struct CpuInfo {
   std::optional<std::string> vendor, extensions;
   std::optional<unsigned> family, model, stepping;
   std::optional<double> max_boost_clock_ghz, current_clock_ghz;
+  // Total bytes across distinct Windows cache records at each level.
   std::optional<std::uint64_t> l1_cache_bytes, l2_cache_bytes, l3_cache_bytes;
   std::optional<bool> virtualization_enabled;
 };
@@ -22,6 +23,7 @@ struct CpuInfo {
 struct MemoryModule {
   std::optional<std::string> slot, type, manufacturer;
   std::optional<std::uint64_t> size_bytes;
+  // Windows ConfiguredClockSpeed (not the module's rated Speed).
   std::optional<unsigned> speed_mhz;
 };
 struct MemInfo {

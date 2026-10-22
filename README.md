@@ -3,7 +3,10 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: M4 delivered and published (v0.4.1).** Native Windows MSVC/MinGW tests
+**Status: native M5 preview v0.5.0 prepared; GitHub publication awaits access.**
+The standalone executable, portable ZIP, per-user installer and winget manifest
+passed local distribution/installer checks; see [M5 validation](docs/M5_VALIDATION.md).
+The Python package remains published as v0.4.1. Native Windows MSVC/MinGW tests
 and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
 local build/repair and installed-package validation. TestPyPI and PyPI each
 passed a fresh CPython 3.12 installation and all 16 Python tests; see
@@ -11,7 +14,36 @@ passed a fresh CPython 3.12 installation and all 16 Python tests; see
 CPU cache sizes and configured RAM speed, verified against the native CLI.
 Remaining second-PC and
 user-observed UAC rejection checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
-[M3 validation](docs/M3_VALIDATION.md). M5/M6 have not started.
+[M3 validation](docs/M3_VALIDATION.md). M6 remains deferred.
+
+## Native Windows installation (no Python)
+
+The prepared v0.5.0 assets are listed in [M5 validation](docs/M5_VALIDATION.md).
+Once published, download them from [GitHub Releases](https://github.com/maaz0166/hwspec/releases):
+
+- **Installer:** run `hwspec-0.5.0-windows-x64-setup.exe`. It installs for your
+  current account, with optional PATH setup. Open a new terminal afterward.
+- **Portable:** extract `hwspec-0.5.0-windows-x64.zip` and run `./hwspec.exe`.
+- **Single executable:** `hwspec-0.5.0-windows-x64.exe` can run directly; rename
+  it to `hwspec.exe` if desired. No separate C++ runtime installation is needed.
+
+```powershell
+hwspec --cpu --mem --os
+hwspec --all -d --json
+```
+
+The installer creates a Start menu entry that pauses after showing the output.
+Uninstall through Windows **Installed apps** or the installed uninstaller. It
+removes only PATH setup owned by this installer and preserves other entries.
+The preview is unsigned; Windows may ask whether you trust the download.
+The supplied winget manifest is validated but is **not yet in Microsoft's
+community catalog**; no public `winget install` availability is claimed.
+
+Real console output from the Windows 11 reference laptop (values vary by PC):
+
+![CPU, memory and Windows overview](docs/images/hwspec-overview.png)
+
+![Detailed CPU output and Unknown handling](docs/images/hwspec-cpu-detail.png)
 
 ## Commands
 
@@ -83,6 +115,27 @@ unambiguously. On VMs, some devices/batteries may not exist; empty arrays or
 unknown fields do not mean zero hardware.
 
 ## Build & tests
+
+### Native distribution (M5)
+
+Requires Windows x64, MSVC/Visual Studio 2022, CMake, Inno Setup 6+ and winget.
+Python is not required by this native build/package pipeline:
+
+```powershell
+./packaging/build_release.ps1
+./tests/verify_portable.ps1 -Archive ./dist/native/hwspec-0.5.0-windows-x64.zip
+./tests/verify_installer.ps1 -Installer ./dist/native/hwspec-0.5.0-windows-x64-setup.exe
+```
+
+The release build uses `HWSPEC_STATIC_RUNTIME=ON`; ordinary builds default to
+the original runtime choice. Python builds reject combining that option with
+the binding. Installer tests refuse to replace an existing hwspec installation
+and restore the test account's original user PATH. Run them in a test account
+or CI environment when hwspec is already installed for your account.
+
+The manual **Native release** workflow runs the same checks. Its publication
+input defaults off. Publishing an explicitly selected preview creates a draft,
+uploads verified assets, then publishes; it never replaces existing releases.
 
 ### Python package (M4)
 

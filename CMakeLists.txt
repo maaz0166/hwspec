@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(hwspec VERSION 0.4.1 LANGUAGES CXX)
+project(hwspec VERSION 0.5.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,6 +7,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(HWSPEC_BUILD_TESTS "Build the tests" ON)
 option(HWSPEC_BUILD_PYTHON "Build the Windows x64 Python extension" OFF)
+option(HWSPEC_STATIC_RUNTIME "Bundle the MSVC runtime into standalone binaries" OFF)
+if(HWSPEC_STATIC_RUNTIME)
+  if(NOT MSVC OR HWSPEC_BUILD_PYTHON)
+    message(FATAL_ERROR "HWSPEC_STATIC_RUNTIME requires an MSVC standalone build")
+  endif()
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # Strict warnings for every target.
 function(hwspec_warnings target)
@@ -61,6 +68,11 @@ hwspec_warnings(hwspec_cli)
 
 # ---- The program: a thin main() over the CLI library ----
 add_executable(hwspec cli/main.cpp)
+if(WIN32)
+  enable_language(RC)
+  configure_file(cli/version.rc.in ${CMAKE_CURRENT_BINARY_DIR}/version.rc @ONLY)
+  target_sources(hwspec PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+endif()
 target_link_libraries(hwspec PRIVATE hwspec_cli)
 hwspec_warnings(hwspec)
 

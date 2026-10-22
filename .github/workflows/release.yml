@@ -1,0 +1,64 @@
+name: Native release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub preview release after all checks pass
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure WinGet validation tool is available
+        shell: pwsh
+        run: |
+          if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+            Install-Module Microsoft.WinGet.Client -Force -Repository PSGallery
+            Repair-WinGetPackageManager -Force -Latest
+            "$env:LOCALAPPDATA\Microsoft\WindowsApps" >> $env:GITHUB_PATH
+          }
+      - name: Build, test and package standalone release
+        shell: pwsh
+        run: ./packaging/build_release.ps1
+      - name: Verify extracted portable archive without Python
+        shell: pwsh
+        run: |
+          $version = ((Get-Content CMakeLists.txt -Raw) -split 'project\(hwspec VERSION ')[1].Split(' ')[0]
+          ./tests/verify_portable.ps1 -Archive "dist/native/hwspec-$version-windows-x64.zip" -Version $version
+      - name: Verify installer, PATH ownership, reinstall and uninstall
+        shell: pwsh
+        run: |
+          $version = ((Get-Content CMakeLists.txt -Raw) -split 'project\(hwspec VERSION ')[1].Split(' ')[0]
+          ./tests/verify_installer.ps1 -Installer "dist/native/hwspec-$version-windows-x64-setup.exe" -Version $version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hwspec-native-release
+          path: dist/native/
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    if: inputs.publish
+    runs-on: windows-2022
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: hwspec-native-release
+          path: dist/native
+      - name: Publish verified assets as a preview
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./packaging/publish_release.ps1 -Repository '${{ github.repository }}' -TargetCommit '${{ github.sha }}'

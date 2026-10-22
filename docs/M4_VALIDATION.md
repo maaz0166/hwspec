@@ -300,7 +300,9 @@ UAC-rejection acceptance items remain open.
 - Second-PC and actual UAC rejection remain pending in M2/M3 validation.
   Task Manager comparison and native pause/Enter-to-close have since passed;
   GPU-source distinctions remain documented without inventing matching values.
-- M5 installers, releases and other distribution channels have not started.
+- M5 native 0.5.0 installer/ZIP/manifest tooling and local checks are now
+  implemented; [M5 validation](./M5_VALIDATION.md) tracks publication separately.
+  Python registry version 0.4.1 remains unchanged.
 
 ## Build-system references
 

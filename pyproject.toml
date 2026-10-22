@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "hwspec"
-version = "0.4.1"
+version = "0.5.0"
 description = "Windows x64 hardware specifications from a shared native C++ core"
 readme = "python/README.md"
 requires-python = ">=3.9"

@@ -82,23 +82,53 @@ manifest and checksums for that build. Do not mix manifests between builds.
 
 ## Publication status and remaining checks
 
-Local M5 implementation and the checks above are complete. The user made the
-repository public, confirmed through GitHub's repository API. CLI authentication
-now succeeds as maaz0166 with repository/workflow access. Source commit and
-GitHub-hosted release execution are the next publication steps.
+Native M5 preview [v0.5.0](https://github.com/maaz0166/hwspec/releases/tag/v0.5.0)
+is publicly published from source commit `900613912c472c30f3cb175075452ffab868316b`.
+The user changed repository visibility; GitHub's API confirmed it is public.
+The [release workflow](https://github.com/maaz0166/hwspec/actions/runs/39822691058)
+completed successfully, including package and publish jobs:
 
-The manual Native release workflow must build and verify its assets before
-publishing the preview. The local publisher is also available:
+- All seven static-runtime CTests passed.
+- Six distribution checks passed against each standalone, portable and installed executable.
+- All 28 installer lifecycle checks passed; winget manifest validation passed.
+- Five assets were uploaded, the draft published, and the release verified as
+  public, non-draft and prerelease. Existing releases were not overwritten.
 
-```powershell
-./packaging/publish_release.ps1
-```
+Earlier hosted attempts exposed three issues that were corrected before this
+successful run: WinGet provisioning needed `-AllUsers`; the installer test
+needed the registered uninstall executable rather than a fixed `unins000.exe`
+name; and workflow installation tokens cannot rely on a user-role permission
+field. The publisher now checks repository access and lets release creation
+itself enforce write permission. Failed runs are not counted as successes.
+The revised installer harness also passed all 28 checks locally before pushing.
 
-Verify the existing remote release/assets after publication, including all
-asset hashes; do not repeat creation if an outcome is uncertain. The publisher
-stops on a failed/ambiguous creation instead of retrying or replacing assets.
-No GitHub-hosted build execution is claimed until its actual run is observed.
-The winget manifest is not submitted to Microsoft's catalog by this work.
+## Published asset verification: 2026-10-22
+
+All five assets were downloaded through public URLs without authentication.
+Their hashes match GitHub's asset digests, and all four package hashes match
+the published `SHA256SUMS.txt`. The downloaded winget manifest references the
+exact published installer hash and passes native `winget validate`.
+The downloaded standalone executable and extracted portable archive each passed
+all six distribution checks on the reference laptop with Python/toolchain PATH
+entries removed. Evidence is under `build/m5-public-download/`,
+`build/m5-public-standalone/` and `build/m5-public-portable/`.
+
+| Published asset | SHA-256 |
+| --- | --- |
+| `hwspec-0.5.0-windows-x64.exe` | `3d3e1d7c7bc9fd64b4aff967a0c34fbb0e8cc35e7b3019e636f52e2b4949d699` |
+| `hwspec-0.5.0-windows-x64.zip` | `315a2e72dd197ec622f31af1ec5b91f98675196528a5f6a56bca8b4a7416ec3d` |
+| `hwspec-0.5.0-windows-x64-setup.exe` | `20427338a89e955ad946a376f8885434a4c3de6f051c6a12f80d2ca9643fbb04` |
+| `hwspec-0.5.0-winget.zip` | `f9663eec4380fe5d07e2a97b3e6d651c45440d5ece6e312c0b66640a5ec5fc43` |
+These are CI-built release assets. The earlier local inventory above remains
+preserved for comparison and must not be mixed with published manifests.
+`SHA256SUMS.txt` itself has SHA-256
+`d5fc19797d2dd91745145a0410f4a06f16fc8cf8f403047c27975d488d4f6d8b`.
+
+M2 second-PC/broader hardware coverage and M3 actual user-observed UAC rejection
+remain open. Hosted Windows Server runner checks do not establish Windows 10
+or second physical PC acceptance. The winget manifest has not been submitted to
+Microsoft's catalog. Python registry version 0.4.1 is unchanged; this native
+release did not publish Python 0.5.0. M6 remains deferred.
 
 References: [Inno Setup](https://jrsoftware.org/isinfo.php),
 [environment notifications](https://jrsoftware.org/ishelp/topic_setup_changesenvironment.htm),

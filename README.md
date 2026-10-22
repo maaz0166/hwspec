@@ -3,9 +3,9 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: native M5 preview v0.5.0 prepared; GitHub publication awaits access.**
+**Status: native M5 preview [v0.5.0 published](https://github.com/maaz0166/hwspec/releases/tag/v0.5.0).**
 The standalone executable, portable ZIP, per-user installer and winget manifest
-passed local distribution/installer checks; see [M5 validation](docs/M5_VALIDATION.md).
+passed local and GitHub-hosted distribution/installer checks; see [M5 validation](docs/M5_VALIDATION.md).
 The Python package remains published as v0.4.1. Native Windows MSVC/MinGW tests
 and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
 local build/repair and installed-package validation. TestPyPI and PyPI each
@@ -18,8 +18,8 @@ user-observed UAC rejection checks are tracked in [M2 validation](docs/M2_VALIDA
 
 ## Native Windows installation (no Python)
 
-The prepared v0.5.0 assets are listed in [M5 validation](docs/M5_VALIDATION.md).
-Once published, download them from [GitHub Releases](https://github.com/maaz0166/hwspec/releases):
+Download the verified v0.5.0 assets from [GitHub Releases](https://github.com/maaz0166/hwspec/releases/tag/v0.5.0).
+Checksums and test evidence are listed in [M5 validation](docs/M5_VALIDATION.md):
 
 - **Installer:** run `hwspec-0.5.0-windows-x64-setup.exe`. It installs for your
   current account, with optional PATH setup. Open a new terminal afterward.

@@ -23,8 +23,10 @@ foreach ($line in Get-Content (Join-Path $output 'SHA256SUMS.txt')) {
     $seen += $name
 }
 if ($seen.Count -ne $names.Count) { throw 'Incomplete release manifest.' }
-$permission = gh api "repos/$Repository" --jq '.permissions.push'
-if ($LASTEXITCODE -or $permission -ne 'true') { throw 'GitHub authentication/write access is required. Run gh auth login locally.' }
+# Installation tokens such as GITHUB_TOKEN do not reliably expose user-role
+# permissions. Check repository access here; release creation enforces write access.
+$remoteName = gh api "repos/$Repository" --jq '.full_name'
+if ($LASTEXITCODE -or $remoteName -ine $Repository) { throw 'GitHub authentication/repository access is required. Run gh auth login locally.' }
 $assets = @($names | ForEach-Object { Join-Path $output $_ }) + (Join-Path $output 'SHA256SUMS.txt')
 # A draft prevents a partially uploaded release from appearing as published.
 # Existing releases are never overwritten or silently reused.

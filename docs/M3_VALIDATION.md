@@ -173,3 +173,39 @@ an observed No-dialog interaction.
 
 - [Microsoft ShellExecute structure and flags](https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-shellexecuteinfow)
 - [Microsoft storage failure prediction](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddstor/ni-ntddstor-ioctl_storage_predict_failure)
+
+## Follow-up: administrator menu input (local fix, not released)
+
+A user reported that a friend selected option 2 after previously selecting
+option 1, but still received output without administrator data. The exact
+prompt input, executable version and remote terminal output have not yet been
+captured, so the cause on that PC is not confirmed.
+
+Inspection found a reproducible input-reader defect: only an exact `2` or `3`
+was recognized; surrounding whitespace or invalid text silently selected skip.
+The previous decision-table tests injected a choice and did not exercise the
+real stdin reader. New tests use that reader with controlled input and a fake
+relauncher (no UAC dialog): exact choices, surrounding whitespace/CRLF, invalid
+input followed by a valid choice, cancellation, Enter/EOF defaults and successive
+choices. They failed before the fix and now pass. Invalid input now prompts
+again, whitespace is accepted, and Enter/EOF retain the safe skip default.
+
+Both native MSVC static-runtime and MinGW builds passed all seven CTests.
+Real-device `--disk -d --skip-admin` text and JSON retained the explicit
+`requires admin` / `requires_admin` disk-health status. No new user-observed UAC
+acceptance or rejection was performed for this change. The published 0.5.0
+release assets remain unchanged; this fix is local and not committed/published.
+
+For remote diagnosis, request `hwspec --version`, the exact prompt/output and
+whether `hwspec --disk -d --elevate` produces a Windows permission prompt or a
+new console. Successful elevation can still yield Unknown health when the disk
+or driver does not expose the supported SMART provider.
+
+The reporter subsequently clarified that the friend installed through pip,
+not the standalone GitHub download. Diagnose the installed Python package and
+interpreter first; the published PyPI version is 0.4.1. Both frontends share the
+menu reader, so the input defect also exists in the published Python source,
+but the friend's exact failure remains unconfirmed. The local regression tests
+above cover the shared C++ path, not an installed wheel with this new fix.
+Compare `hwspec --version` with `python -m hwspec --version`, then try
+`python -m hwspec --disk -d --elevate` using the same Python environment.

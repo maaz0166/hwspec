@@ -44,6 +44,9 @@ Do not mark M2 fully verified just because portable tests pass. Confirm the curr
 
 ## Current priority
 
+The user explicitly authorized the administrator-menu fix and 0.5.1 publication to GitHub, TestPyPI and PyPI. The pip 0.4.1 console reproduced exact-choice failure; the shared reader now handles retained CRLF and whitespace. Track current release work in docs/V0_5_1_VALIDATION.md. Preserve earlier immutable release files and the unrelated LinkedIn draft. Publication/registry verification is pending; the previous release status below remains historical.
+
+
 M5 native preview v0.5.0 is published at https://github.com/maaz0166/hwspec/releases/tag/v0.5.0 from commit 9006139. GitHub release workflow 39822691058 passed all packaging, portable and installer checks. Public asset downloads and hashes were independently verified; original local assets under `dist/native/` are preserved and differ from CI-built release assets as documented in `docs/M5_VALIDATION.md`. Python 0.4.1 remains published on both registries; Python 0.5.0 was not uploaded. M2 second-PC/broader device coverage and M3 actual UAC rejection remain open. Winget manifests are validated but not submitted to the community catalog. M6 remains deferred. Do not overwrite release assets, change visibility or publish Python without explicit authorization.
 
 ## Learnings

@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Archive,
     [string]$OutputDirectory = "$PSScriptRoot/../build/portable-validation",
-    [string]$Version = '0.5.0'
+    [string]$Version = '0.5.1'
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem

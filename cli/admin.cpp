@@ -97,8 +97,16 @@ AdminRuntime native_admin_runtime(std::ostream& err, const RelaunchCommand& comm
     err << ".\n  [1] Skip them and continue (default)\n"
         << "  [2] Reopen this command as administrator\n  [3] Cancel\nChoice [1]: " << std::flush;
     std::string answer;
-    std::getline(std::cin, answer);
-    return answer == "2" ? '2' : answer == "3" ? '3' : '1';
+    // CPython uses binary C stdio on Windows, so getline can retain the CR.
+    while (std::getline(std::cin, answer)) {
+      const auto first = answer.find_first_not_of(" \t\r\n");
+      if (first == std::string::npos) return '1'; // Enter keeps the safe default.
+      const auto last = answer.find_last_not_of(" \t\r\n");
+      if (first == last && answer[first] >= '1' && answer[first] <= '3')
+        return answer[first];
+      err << "Please enter 1, 2, or 3 (Enter skips).\nChoice [1]: " << std::flush;
+    }
+    return '1'; // Closed/unreadable input must not launch or keep prompting.
   };
   runtime.pause = [&err] {
     err << "Press Enter to close..." << std::flush;

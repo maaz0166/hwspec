@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Installer,
     [string]$WorkDirectory = "$PSScriptRoot/../build/installer-validation",
-    [string]$Version = '0.5.0'
+    [string]$Version = '0.5.1'
 )
 $ErrorActionPreference = 'Stop'
 $installerPath = (Resolve-Path -LiteralPath $Installer).Path

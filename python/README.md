@@ -1,8 +1,9 @@
 # hwspec
 
 Windows 10/11 x64 hardware specifications, backed by the same C++ core as the
-standalone executable. Python 3.9+ on Windows x64 is required. Version 0.4.1
-includes corrected total CPU cache sizes and configured RAM speed reporting.
+standalone executable. Python 3.9+ on Windows x64 is required. Version 0.5.1
+fixes administrator-menu input under Python, accepting Windows line endings and
+surrounding spaces. Earlier cache-total and configured-RAM-speed fixes are included.
 
 ## Command line
 

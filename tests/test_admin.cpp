@@ -75,6 +75,59 @@ void choices() {
   CHECK_EQ(decline.run_args({"--disk","-d"}),0); CHECK_EQ(decline.privileged_reads,0);
   CHECK(has(decline.out.str(),"requires admin")); CHECK(has(decline.err.str(),"elevation declined"));
 }
+// Exercise the real stdin reader; the decision-table fixtures above inject choices.
+class ScopedPromptInput {
+  std::istringstream input;
+  std::streambuf* previous;
+  std::ios::iostate state;
+public:
+  explicit ScopedPromptInput(const std::string& text)
+      : input(text), previous(std::cin.rdbuf()), state(std::cin.rdstate()) {
+    std::cin.rdbuf(input.rdbuf());
+    std::cin.clear();
+  }
+  ~ScopedPromptInput() { std::cin.rdbuf(previous); std::cin.clear(state); }
+};
+void prompt_reader() {
+  for (const auto& input : std::vector<std::string>{"2\n", "2\r\n", " 2 \n", "\t2\r\n", "invalid\n2\n", "22\n2\n"}) {
+    ScopedPromptInput redirected(input);
+    Fixture f;
+    f.runtime.interactive=true;
+    f.runtime.prompt=native_admin_runtime(f.err).prompt;
+    CHECK_EQ(f.run_args({"--disk","-d"}),0);
+    CHECK_EQ(f.launches,1);
+    CHECK_EQ(f.reads,0);
+    CHECK(f.child_args==std::vector<std::string>({"--disk","-d","--pause"}));
+    if (input=="invalid\n2\n" || input=="22\n2\n")
+      CHECK(has(f.err.str(),"Please enter 1, 2, or 3"));
+  }
+  for (const auto& input : std::vector<std::string>{"1\n", "\n", " \t\r\n", "", "invalid\n"}) {
+    ScopedPromptInput redirected(input);
+    Fixture f;
+    f.runtime.interactive=true;
+    f.runtime.prompt=native_admin_runtime(f.err).prompt;
+    CHECK_EQ(f.run_args({"--disk","-d"}),0);
+    CHECK_EQ(f.launches,0);
+    CHECK_EQ(f.privileged_reads,0);
+    CHECK(has(f.out.str(),"requires admin"));
+  }
+  {
+    ScopedPromptInput redirected(" 3 \r\n");
+    Fixture f;
+    f.runtime.interactive=true;
+    f.runtime.prompt=native_admin_runtime(f.err).prompt;
+    CHECK_EQ(f.run_args({"--disk","-d"}),1);
+    CHECK_EQ(f.reads,0);
+    CHECK_EQ(f.launches,0);
+  }
+  {
+    ScopedPromptInput redirected("1\n2\n");
+    std::ostringstream err;
+    const auto runtime=native_admin_runtime(err);
+    CHECK_EQ(runtime.prompt({"disk health"}),'1');
+    CHECK_EQ(runtime.prompt({"disk health"}),'2');
+  }
+}
 void explicit_elevation() {
   Fixture f;
   CHECK_EQ(f.run_args({"--json","--disk","-d","--elevate","--pause"}),0);
@@ -140,6 +193,6 @@ void arguments() {
 } // namespace
 int main() {
   decision_table(); no_privilege_needed(); choices(); explicit_elevation();
-  pause_and_early_exit(); whole_section_requires_admin(); smart_output(); arguments();
+  pause_and_early_exit(); whole_section_requires_admin(); smart_output(); arguments(); prompt_reader();
   return finish();
 }

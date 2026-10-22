@@ -38,6 +38,14 @@ jobs:
         run: |
           $version = ((Get-Content CMakeLists.txt -Raw) -split 'project\(hwspec VERSION ')[1].Split(' ')[0]
           ./tests/verify_installer.ps1 -Installer "dist/native/hwspec-$version-windows-x64-setup.exe" -Version $version
+      - name: Show installer logs on failure
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem build/installer-validation -Filter '*.log' -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Output $_.Name
+            Get-Content -LiteralPath $_.FullName -Tail 50
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: hwspec-native-release

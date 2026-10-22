@@ -33,8 +33,18 @@ function Run-Setup([string]$Task = 'addtopath', [string]$LogName = 'install') {
     Assert ($process.ExitCode -eq 0) "$LogName exit code"
 }
 function Uninstall([string]$Name) {
-    $uninstaller = Join-Path $app 'unins000.exe'
-    if (-not (Test-Path -LiteralPath $uninstaller)) { throw 'Missing test uninstaller.' }
+    # Reinstallation may use unins001.exe while an earlier uninstall stub exits.
+    # Use the product registration instead of assuming Inno's sequence number.
+    $registration = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($uninstallKey)
+    if ($null -eq $registration) { throw 'Missing test uninstall registration.' }
+    try { $uninstaller = [string]$registration.GetValue('UninstallString') }
+    finally { $registration.Dispose() }
+    $uninstaller = [IO.Path]::GetFullPath($uninstaller.Trim('"'))
+    if ([IO.Path]::GetDirectoryName($uninstaller) -ine $app -or
+        [IO.Path]::GetFileName($uninstaller) -notmatch '^unins\d+\.exe$' -or
+        -not (Test-Path -LiteralPath $uninstaller)) {
+        throw "Invalid or missing registered test uninstaller: $uninstaller"
+    }
     $process = Start-Process -FilePath $uninstaller -WindowStyle Hidden -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="'+(Join-Path $work ($Name+'.log'))+'"')) -PassThru
     if (-not $process.WaitForExit(90000)) { throw 'Uninstaller timed out.' }
     Assert ($process.ExitCode -eq 0) "$Name exit code"

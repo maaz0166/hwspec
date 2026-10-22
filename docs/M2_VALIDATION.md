@@ -27,7 +27,7 @@ they cannot substitute for those two physical machines.
 | Check | PC 1 | PC 2 |
 | --- | --- | --- |
 | Windows version, x64 | Windows 11 Pro x64, 26100.6584 | Not yet verified |
-| MSVC build and CTest | MinGW build + CTest pass; MSVC pending | Not yet verified |
+| MSVC build and CTest | MSVC + MinGW Release builds and CTest pass | Not yet verified |
 | JSON smoke script | Passed | Not yet verified |
 | Normal mode matches system UI | CIM comparisons pass; UI pending | Not yet verified |
 | CPU detailed fields / Unknown cases | Runs; manual comparison pending | Not yet verified |
@@ -60,9 +60,86 @@ Intel Core i5-8365U (4 physical / 8 logical cores), 8 GB installed RAM.
 - CPU maximum boost clock is Unknown. Registry base clock (~1.896 GHz here)
   is an approximate fallback and still requires manual UI comparison.
 
-The table above includes partial acceptance results: UI comparisons, MSVC,
+The table above includes partial acceptance results: UI comparisons,
 a second physical PC, and Intel/AMD coverage are still pending. CIM comparisons
 do not claim Task Manager/System Information UI validation.
+
+### MSVC follow-up: 2026-10-22
+
+Located Visual Studio 2022 on the D: drive using `vswhere` (MSVC 19.44.35217.0,
+Windows SDK 10.0.26100.0). The x64 Release build exposed a Windows `max` macro
+collision in the network speed check; parenthesizing the standard-library
+function name fixes it. The first CTest run then exposed dangling references
+in `CHECK_EQ` when comparing fields indexed from temporary reports. The helper
+now copies its operands; the existing formatter edge-case assertions pass.
+
+```powershell
+cmake -S . -B build/msvc -G "Visual Studio 17 2022" -A x64
+cmake --build build/msvc --config Release --parallel 4
+ctest --test-dir build/msvc -C Release --output-on-failure
+python tests/smoke_json.py ./build/msvc/Release/hwspec.exe
+./build/msvc/Release/hwspec.exe --all -d --skip-admin
+```
+
+The MSVC Release build, all seven CTest executables, JSON smoke checks, and
+all-section detailed text run passed on the same laptop. This does not count
+as a second-PC check or manual comparison with Task Manager/System Information.
+
+### Repeatable acceptance runner
+
+[verify_windows.ps1](../tests/verify_windows.ps1) now captures all seven sections
+in normal/detailed text and JSON, plus default/all views, flag handling, admin
+policy and selected CIM comparisons. On this laptop it passed 107 standard-user
+checks and 108 elevated checks. The standard-user validation kit was also run
+successfully with Windows PowerShell 5.1. These repeats remain PC 1 results;
+they do not satisfy PC 2 or the manual UI comparison requirement.
+
+See [Windows acceptance](./WINDOWS_ACCEPTANCE.md) for commands to run on a second PC
+without Python, CMake or a compiler.
+
+### System Information export comparison: 2026-10-22
+
+Generated a report using Windows `msinfo32 /report` and compared it with the
+native output. This supplies System Information data; Task Manager visual
+comparison and the second PC remain outstanding.
+
+- CPU name, 4 physical/8 logical cores, and 1896 MHz reported clock match.
+- Windows build 26100 and visible memory match (7.82 GB in System Information,
+  7.8 GB at hwspec's lower display precision). Installed module capacity is 8 GB.
+- C: and D: volume capacities match exactly at 181152235520 and 73712177152
+  bytes, with NTFS and physical disk model matching the export.
+- Intel UHD Graphics 620, driver 31.0.101.2137 and 1920 x 1080 resolution match.
+- **Source discrepancies remain:** DXGI dedicated video memory is 134217728
+  bytes (128 MiB), while System Information/WMI AdapterRAM is 1073741824 bytes
+  (1 GiB). EnumDisplaySettings reports 60 Hz; the export/WMI reports 59 Hz.
+  Keep the existing native API values and source distinctions; neither matching
+  those different properties nor an exact refresh rate is claimed. Microsoft
+  documents [DXGI memory values](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiadapter-getdesc)
+  and the [dedicated/shared memory distinction](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ns-dxgi-dxgi_adapter_desc).
+- **Virtualization correctness fix:** the export reports a hypervisor and VBS
+  running, while the firmware availability API returned false. That API describes
+  firmware enablement *and* operating-system availability, so false under an
+  active hypervisor does not reliably prove firmware is disabled. The collector
+  now emits Unknown/JSON null in that case. It preserves true for a positive
+  availability result, and false when no hypervisor is present. Regression tests
+  cover all four combinations and both output formats. This is a conservative
+  interpretation of the [API's documented meaning](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-isprocessorfeaturepresent),
+  using Microsoft's [CPUID hypervisor discovery](https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/tlfs/feature-discovery).
+
+The original elevation-test console kept its executable open. The corrected
+MSVC executable was linked into a separate runtime directory:
+
+```powershell
+cmake -S . -B build/msvc -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=C:/Users/DELL/Desktop/Projects/hwspec-git/build/msvc/verified
+cmake --build build/msvc --config Release --parallel 4
+ctest --test-dir build/msvc -C Release --output-on-failure
+python tests/smoke_json.py ./build/msvc/verified/hwspec.exe
+```
+
+Both corrected MSVC and MinGW builds pass all seven tests and JSON smoke checks.
+The updated acceptance runner adds a hypervisor/virtualization consistency check
+on hosts with a hypervisor (108 standard-user and 109 elevated checks on this
+laptop, all passing). The final kit includes this corrected executable.
 
 ## Intentional scope boundaries and limitations
 

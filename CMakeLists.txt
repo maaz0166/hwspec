@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-project(hwspec VERSION 0.3.0 LANGUAGES CXX)
+project(hwspec VERSION 0.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(HWSPEC_BUILD_TESTS "Build the tests" ON)
+option(HWSPEC_BUILD_PYTHON "Build the Windows x64 Python extension" OFF)
 
 # Strict warnings for every target.
 function(hwspec_warnings target)
@@ -62,6 +63,20 @@ hwspec_warnings(hwspec_cli)
 add_executable(hwspec cli/main.cpp)
 target_link_libraries(hwspec PRIVATE hwspec_cli)
 hwspec_warnings(hwspec)
+
+if(HWSPEC_BUILD_PYTHON)
+  if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR
+     NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64)$")
+    message(FATAL_ERROR "The hwspec Python package supports Windows x64 only")
+  endif()
+  set(PYBIND11_FINDPYTHON ON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+  find_package(pybind11 CONFIG REQUIRED)
+  pybind11_add_module(_native python/bindings.cpp)
+  target_link_libraries(_native PRIVATE hwspec_cli)
+  hwspec_warnings(_native)
+  install(TARGETS _native LIBRARY DESTINATION hwspec RUNTIME DESTINATION hwspec)
+endif()
 
 # ---- Tests ----
 if(HWSPEC_BUILD_TESTS)

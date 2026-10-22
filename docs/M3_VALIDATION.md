@@ -83,13 +83,57 @@ Run the same native executable in these contexts and record actual results:
 | Standard user, JSON | `hwspec --disk -d --json`; valid JSON, requires_admin | Tested locally |
 | Standard user, interactive | `hwspec --disk -d`; blank skips; 3 cancels | Tested locally in native console; explicit 1 covered by policy tests |
 | Interactive pause | `hwspec --cpu --pause`; output then Enter to close | Tested locally in native console |
-| Reopen / explicit elevation | Choice 2 and `hwspec --disk -d --elevate`; UAC, same sections, child pauses | Automated policy tests; native UAC check pending |
-| UAC rejection | Decline dialog; parent continues with requires admin | Automated fallback test; native dialog check pending |
-| Elevated, JSON and text | No prompt; prediction booleans or Unknown on unsupported hardware | Automated policy tests; native elevated check pending |
-| Elevated skip | `hwspec --disk -d --skip-admin --json`; requires_admin | Automated policy test; native elevated check pending |
+| Reopen / explicit elevation | Choice 2 and `hwspec --disk -d --elevate`; UAC, same sections, child pauses | Native explicit elevation launched; child arguments inspected; choice 2 covered by policy tests |
+| UAC rejection | Decline dialog; parent continues with requires admin | Native fallback returned 0 with requires admin; user confirmation of No versus unavailable elevation pending |
+| Elevated, JSON and text | No prompt; prediction booleans or Unknown on unsupported hardware | Native elevated piped text and JSON passed; this device/provider is unsupported and reports Unknown |
+| Elevated skip | `hwspec --disk -d --skip-admin --json`; requires_admin | Native elevated check passed |
 
-MSVC compilation is covered by the existing Windows CI workflow when it runs;
-the local toolchain is MinGW-w64 GCC 15.2. No MSVC run is claimed here.
+Local MSVC 19.44.35217.0 / Windows SDK 10.0.26100.0 x64 Release compilation,
+all seven CTest executables, JSON smoke checks and detailed text output passed
+on 2026-10-22 after fixing the Windows `max` macro collision and test operand
+lifetimes described in [M2 validation](./M2_VALIDATION.md). MinGW-w64 GCC 15.2
+was also exercised locally. The live follow-up below adds elevated verification;
+user-observed dialog and console details still need confirmation.
+
+## Live elevation follow-up: 2026-10-22
+
+The same MSVC Release executable was exercised by
+[verify_windows.ps1](../tests/verify_windows.ps1) as standard user (107 checks)
+and administrator (108 checks), with zero failures in both contexts. The
+SHA-256 in both summaries is
+`593C3236D22FF73C694FF38B029A88228D01BAFFFEDFB5E45131D050BC8D31A3`.
+The runner captures each section's normal/detailed text and JSON, skipped health,
+piped pause behavior, and reference CIM comparisons.
+
+- The first native `--disk -d --elevate` attempt returned 0, printed the
+  elevation-declined-or-unavailable diagnostic, and continued with ordinary disk
+  details plus `requires admin`. The user was instructed to choose No. Because
+  the diagnostic also covers unavailable elevation, actual No-dialog observation
+  remains unconfirmed rather than being assumed.
+- A subsequent native `--disk -d --elevate` returned 0 with no parent output.
+  An elevated observer found the child running the same executable with
+  exactly `--disk -d --pause`, confirming section preservation, loop prevention
+  and pause argument insertion. Closing on Enter still needs user observation.
+- The separate elevated runner confirmed its administrator token. Native
+  detailed text/JSON had no permission prompt. SMART was `unknown`, while an
+  independent elevated `Get-CimInstance` query of the same provider returned
+  `Not supported`. No healthy/failing prediction can be claimed for this NVMe.
+- `--skip-admin --pause --json` remained noninteractive and returned
+  `requires_admin` even when elevated, with no prediction records.
+- The extracted validation kit passed the standard-user checks under Windows
+  PowerShell 5.1 as well as the repository runner under PowerShell 7.
+
+The raw local captures are under the ignored build directory. See
+[Windows acceptance](./WINDOWS_ACCEPTANCE.md) for second-PC and interactive checks.
+
+After the CPU virtualization correctness fix documented in M2 validation, the
+corrected executable in `build/msvc/verified/` passed 108 standard-user checks
+and 109 elevated checks, including the new hypervisor consistency assertion.
+Both summaries identify SHA-256
+`0CFCF613B4B91ECA0E47E9A8093CB6E4439E4E7092ACD5ADBBFDA8446D5D2373`.
+Virtualization is now null on this hypervisor host; elevated SMART remains
+unknown with the independent provider query reporting unsupported. This is
+the executable included in the final validation kit.
 
 ## Implementation references
 

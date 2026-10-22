@@ -132,6 +132,10 @@ void arguments() {
   CHECK(quote_windows_argument(L"a b")==L"\"a b\"");
   CHECK(quote_windows_argument(L"C:\\a b\\")==L"\"C:\\a b\\\\\"");
   CHECK(quote_windows_argument(L"a\"b")==L"\"a\\\"b\"");
+  CHECK(relaunch_parameters(elevated_arguments({"--cpu","--elevate"}),{L"-m",L"hwspec"})==
+        L"\"-m\" \"hwspec\" \"--cpu\" \"--pause\"");
+  CHECK(relaunch_parameters({"--json"},{L"a b",L"quoted\"value"})==
+        L"\"a b\" \"quoted\\\"value\" \"--json\"");
 }
 } // namespace
 int main() {

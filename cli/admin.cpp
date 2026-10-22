@@ -30,6 +30,19 @@ std::wstring quote_windows_argument(const std::wstring& value) {
   return result + L'"';
 }
 
+std::wstring relaunch_parameters(const std::vector<std::string>& args,
+                                 const std::vector<std::wstring>& prefix) {
+  std::wstring result;
+  const auto append = [&result](const std::wstring& value) {
+    if (!result.empty()) result += L' ';
+    result += quote_windows_argument(value);
+  };
+  for (const auto& value : prefix) append(value);
+  // Accepted CLI arguments are ASCII flags; the interpreter path is Unicode.
+  for (const auto& value : args) append(std::wstring(value.begin(), value.end()));
+  return result;
+}
+
 #ifdef _WIN32
 namespace {
 bool is_elevated() {
@@ -41,17 +54,15 @@ bool is_elevated() {
   CloseHandle(token);
   return ok && elevation.TokenIsElevated != 0;
 }
-bool relaunch(const std::vector<std::string>& args) {
-  std::wstring executable(32768, L'\0');
-  const DWORD size = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
-  if (!size || size >= executable.size()) return false;
-  executable.resize(size);
-  std::wstring parameters;
-  // All accepted CLI arguments are ASCII flags; no paths or positional values.
-  for (const auto& arg : args) {
-    if (!parameters.empty()) parameters += L' ';
-    parameters += quote_windows_argument(std::wstring(arg.begin(), arg.end()));
+bool relaunch(const std::vector<std::string>& args, const RelaunchCommand& command) {
+  std::wstring executable = command.executable;
+  if (executable.empty()) {
+    executable.resize(32768, L'\0');
+    const DWORD size = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+    if (!size || size >= executable.size()) return false;
+    executable.resize(size);
   }
+  const std::wstring parameters = relaunch_parameters(args, command.prefix);
   SHELLEXECUTEINFOW info{};
   info.cbSize = sizeof info;
   info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI;
@@ -65,11 +76,17 @@ bool relaunch(const std::vector<std::string>& args) {
 #endif
 
 AdminRuntime native_admin_runtime(std::ostream& err) {
+  return native_admin_runtime(err, {});
+}
+
+AdminRuntime native_admin_runtime(std::ostream& err, const RelaunchCommand& command) {
   AdminRuntime runtime;
 #ifdef _WIN32
   runtime.elevated = is_elevated();
   runtime.interactive = _isatty(_fileno(stdin)) && _isatty(_fileno(stdout));
-  runtime.relaunch = relaunch;
+  runtime.relaunch = [command](const std::vector<std::string>& args) { return relaunch(args, command); };
+#else
+  (void)command;
 #endif
   runtime.prompt = [&err](const std::vector<std::string>& titles) {
     err << titles.size() << " section(s) need administrator rights: ";

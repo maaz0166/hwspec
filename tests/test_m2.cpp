@@ -2,6 +2,7 @@
 #include "hwspec/format.hpp"
 #include "hwspec/json.hpp"
 #include "hwspec/sections.hpp"
+#include "../core/src/windows/cpu_state.hpp"
 #include <string>
 
 using namespace hwspec;
@@ -32,6 +33,18 @@ void cpu_details(){
   CHECK(has(j,"\"virtualization_enabled\":false"));
   CHECK(has(j,"\"l1_cache_bytes\":null"));
   CHECK(!has(json_cpu(c,false),"virtualization_enabled"));
+}
+void virtualization_with_hypervisor(){
+  CHECK(win::firmware_virtualization_state(true,false)==std::optional<bool>(true));
+  CHECK(win::firmware_virtualization_state(true,true)==std::optional<bool>(true));
+  CHECK(win::firmware_virtualization_state(false,false)==std::optional<bool>(false));
+  CpuInfo cpu;
+  cpu.virtualization_enabled=win::firmware_virtualization_state(false,true);
+  CHECK(!cpu.virtualization_enabled.has_value());
+  CHECK(has(json_cpu(cpu,true),"\"virtualization_enabled\":null"));
+  const auto report=format_cpu(cpu,true);
+  CHECK_EQ(report.fields.back().label,std::string("Virtualization"));
+  CHECK_EQ(report.fields.back().value,std::string("Unknown"));
 }
 void memory_details(){
   MemInfo m;m.total_bytes=16ULL*1024*1024*1024;m.available_bytes=8ULL*1024*1024*1024;
@@ -69,6 +82,6 @@ void json_escaping(){
 }
 } // namespace
 int main(){
-  section_registry();cpu_details();memory_details();gpu_and_disks();batteries();json_escaping();
+  section_registry();cpu_details();virtualization_with_hypervisor();memory_details();gpu_and_disks();batteries();json_escaping();
   return finish();
 }

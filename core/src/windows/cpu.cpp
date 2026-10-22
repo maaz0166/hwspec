@@ -12,6 +12,7 @@
 
 #include "hwspec/collectors.hpp"
 #include "registry.hpp"
+#include "cpu_state.hpp"
 
 namespace hwspec {
 
@@ -168,7 +169,9 @@ CpuInfo collect_cpu(bool detail) {
   if(detail){
     read_caches(info);read_current_clock(info);
 #ifdef PF_VIRT_FIRMWARE_ENABLED
-    info.virtualization_enabled=(IsProcessorFeaturePresent(PF_VIRT_FIRMWARE_ENABLED)!=FALSE);
+    const bool hypervisor_present=cpuid(0)[0]>=1 && (cpuid(1)[2]&(1u<<31))!=0;
+    info.virtualization_enabled=win::firmware_virtualization_state(
+        IsProcessorFeaturePresent(PF_VIRT_FIRMWARE_ENABLED)!=FALSE,hypervisor_present);
 #endif
   }
   return info;

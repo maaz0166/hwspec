@@ -1,0 +1,45 @@
+[build-system]
+requires = ["scikit-build-core>=0.11,<2", "pybind11>=3.0,<4"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "hwspec"
+version = "0.4.0"
+description = "Windows x64 hardware specifications from a shared native C++ core"
+readme = "python/README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "MuhammadMaaz" }]
+keywords = ["hardware", "specs", "system-information", "cli", "windows"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: C++",
+]
+
+[project.scripts]
+hwspec = "hwspec.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/maaz0166/hwspec"
+
+[tool.scikit-build]
+cmake.version = ">=3.20"
+wheel.packages = ["python/src/hwspec"]
+sdist.include = ["CMakeLists.txt", "core/**", "cli/**", "python/**", "tests/**", "LICENSE"]
+sdist.exclude = ["build/**", "out/**", "dist/**", "**/__pycache__/**"]
+
+[tool.scikit-build.cmake.define]
+HWSPEC_BUILD_PYTHON = "ON"
+HWSPEC_BUILD_TESTS = "OFF"
+
+[tool.cibuildwheel]
+build = ["cp39-win_amd64", "cp310-win_amd64", "cp311-win_amd64", "cp312-win_amd64", "cp313-win_amd64", "cp314-win_amd64"]
+test-command = 'python "{project}/tests/test_python.py"'
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+environment = { CMAKE_GENERATOR = "Visual Studio 17 2022", CMAKE_GENERATOR_PLATFORM = "x64" }

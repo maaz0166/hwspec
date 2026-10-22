@@ -3,11 +3,13 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: M3 source implemented (v0.3.0).** Native Windows MinGW build, unit tests,
-JSON smoke checks and laptop battery collection have been exercised locally.
-M2 still needs a second PC and manual UI comparisons; M3 still needs native UAC
-and elevated hardware acceptance. See [M2 validation](docs/M2_VALIDATION.md) and
-[M3 validation](docs/M3_VALIDATION.md). M4–M6 have not started.
+**Status: M4 source implemented (v0.4.0).** Native Windows MSVC/MinGW tests and
+JSON smoke checks pass. A CPython 3.12 wheel built from the source archive,
+installed into a clean environment and passed all 15 Python tests. The wheel
+matrix and registry publication still need verification; see
+[M4 validation](docs/M4_VALIDATION.md). Remaining second-PC, UI and user-observed
+UAC checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
+[M3 validation](docs/M3_VALIDATION.md). M5/M6 have not started.
 
 ## Commands
 
@@ -72,11 +74,41 @@ not support the legacy WMI SMART provider. Text uses `Unknown` for missing data.
 Maximum boost clock is read from CPUID leaf 0x16 where available. Some CPUs do
 not report it. The fallback registry MHz value for base clock may itself be
 approximate, so compare CPU clock values with System Information and CPU-Z.
+Firmware virtualization is Unknown when a hypervisor is present and Windows
+does not expose the firmware availability flag reliably.
 GPU display resolution is left unknown when hybrid graphics cannot be mapped
 unambiguously. On VMs, some devices/batteries may not exist; empty arrays or
 unknown fields do not mean zero hardware.
 
 ## Build & tests
+
+### Python package (M4)
+
+Build from the repository root; packaging metadata is in root `pyproject.toml`
+so the source archive includes the shared C++ implementation.
+
+```powershell
+python -m pip install build
+python -m build
+python -m pip install ./dist/hwspec-0.4.0-cp312-cp312-win_amd64.whl  # CPython 3.12
+python -m hwspec --all --json
+```
+
+```python
+import hwspec
+data = hwspec.collect(["cpu", "mem"], detail=True)
+```
+
+Binary wheels need Windows x64 Python; source builds also need a C++ toolchain
+and CMake. The API never prompts or elevates and uses `None` for missing data.
+See [Python package usage](python/README.md) and
+[M4 verification/publication status](docs/M4_VALIDATION.md). The local artifacts
+have not been uploaded to TestPyPI or PyPI.
+
+For distribution, use the repaired wheels produced by cibuildwheel, as the
+workflow does. Locally validated CPython 3.9–3.14 distribution wheels are in
+`dist/cibuildwheel/`; their C++ runtime dependency is bundled. Plain `python -m build`
+creates an unrepaired wheel suitable for local development on the build machine.
 
 This project **runs on Windows x64**. CMake tests for formatting/CLI also build
 on Linux with placeholder collectors; a Linux build does not report Linux data.
@@ -115,7 +147,8 @@ hardware acceptance check.
 - `core/src/format.cpp`, `json.cpp`: hardware-independent output functions
 - `cli/`: arguments and reusable `run()` function (exe + future Python binding)
 - `tests/`: CLI, admin decision table, format, JSON, hardware checks and smoke script
-- `python/`: the original PyPI name-reservation placeholder; M4 binding not yet started
+- `python/`: pybind11 extension and Python API/module/console entry points
+- `pyproject.toml`: native wheel/sdist packaging and Windows cibuildwheel matrix
 
 All section collectors return plain data without printing. Windows code stays
 behind the core's public interfaces. The original M1 collector callbacks remain

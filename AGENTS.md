@@ -22,9 +22,9 @@ The full project specification is maintained in `docs/project-plan.md`. **Read t
 
 - **M0 — Setup:** Complete.
 - **M1 — MVP:** Complete (`--cpu`, `--mem`, `--os`, `--all`, initial tests).
-- **M2 — More data:** Native MinGW build, CTest, JSON smoke checks, CIM comparisons and laptop battery capacities verified on one Windows 11 laptop. **MSVC, manual UI comparisons and the second-PC acceptance checks remain pending.** See `docs/M2_VALIDATION.md`.
-- **M3 — Administrator handling:** Source implemented. Elevation detection, admin prompt, `--skip-admin`, `--elevate`, `--pause`, and WMI SMART prediction are present. Automated decision-table tests and native standard-user skip/cancel/pause checks pass. **Live UAC and elevated hardware acceptance remain pending.** See `docs/M3_VALIDATION.md`.
-- **M4 — Python package:** Not implemented.
+- **M2 — More data:** Native MSVC and MinGW builds, CTest, JSON smoke checks, CIM comparisons and laptop battery capacities verified on one Windows 11 laptop. **Manual UI comparisons and the second-PC acceptance checks remain pending.** See `docs/M2_VALIDATION.md`.
+- **M3 — Administrator handling:** Source implemented. Native standard/elevated/piped checks pass, including elevated skip behavior. Explicit elevation preserved arguments and added pause; this NVMe SMART provider is unsupported and correctly reports Unknown. **User-observed UAC rejection and console close-on-Enter confirmation remain pending.** See `docs/M3_VALIDATION.md`.
+- **M4 — Python package:** Source implemented (v0.4.0): pybind11 API, shared pip/module CLI, Python-aware elevation, source distribution and Windows wheel workflow. All six CPython 3.9–3.14 Windows x64 wheels passed local cibuildwheel build/repair and installed-package validation (15 tests per interpreter); CPython 3.12 also built from sdist. Live installed-package Python UAC preserved the virtual environment/arguments, displayed a pause and exited 0 after Enter. **TestPyPI/PyPI publication remains blocked on publishing access; GitHub-hosted execution is not yet observed.** See `docs/M4_VALIDATION.md`.
 - **M5 — Release/distribution:** Not implemented.
 - **M6 — Later features:** Deferred.
 
@@ -44,13 +44,20 @@ Do not mark M2 fully verified just because portable tests pass. Confirm the curr
 
 ## Current priority
 
-Finish the remaining M2/M3 acceptance checks before beginning M4: test a second physical PC, compare values with Task Manager/System Information, build with MSVC, and exercise live UAC approval/rejection and elevated SMART collection. Preserve the completed local MinGW/laptop verification recorded in the validation documents. Investigate failures without guessing unsupported hardware values.
+The user authorized proceeding with M4 on 2026-10-22 while external M2/M3 evidence remains pending. Finish the remaining acceptance work before M5: second-PC/Task Manager comparisons, user-observed native UAC/console behavior, the Python wheel matrix, and approved TestPyPI/PyPI publication. Preserve the completed local MSVC/MinGW/laptop, elevated SMART, Python wheel and installed-package UAC verification. Use `tests/verify_windows.ps1` for repeatable per-PC captures and `tests/verify_python_uac.ps1` for the Python elevation/console check. Investigate failures without guessing unsupported hardware values.
+
+## Learnings
+
+- Windows headers can define `min`/`max` before a later helper sets `NOMINMAX`. Use `(std::numeric_limits<T>::max)()` when an existing include order exposes the Windows `max` macro; verify with MSVC as well as MinGW.
+- Test comparisons must keep their operands alive. Copy values in `CHECK_EQ`: binding `const auto&` to `format_mem(info).fields[1].value` leaves a dangling reference after the temporary report is destroyed because vector indexing does not extend its lifetime.
+- A negative `PF_VIRT_FIRMWARE_ENABLED` result under an active hypervisor does not reliably establish BIOS state. Preserve Unknown/null in that case; do not infer enabled firmware merely from the hypervisor either. Different hardware API properties (for example DXGI dedicated video memory versus WMI AdapterRAM) must retain their source distinctions when values disagree.
+- Distribute cibuildwheel's repaired wheels, not raw `python -m build` wheels. Local Visual Studio runtime installations can hide missing DLL dependencies; the CPython 3.12 build needed `msvcp140.dll`, which delvewheel bundled. Root `pyproject.toml` must keep the CMake/package versions consistent, and sdists must include core, CLI and binding sources.
 
 ## Platform and tools
 
 - Windows 10/11 x64 is the v1 target.
 - CMake and a Windows-capable C++ toolchain (prefer MSVC) for native builds.
 - Windows APIs and registry for data collection; the plan documents alternatives and limitations.
-- Python integration via pybind11 is planned for M4, not part of M2.
+- Python integration uses pybind11 in M4. Root `pyproject.toml` is canonical so sdists contain the core and CLI; build from the repository root. The package is Windows x64 only.
 
 Keep changes consistent with the project plan and the code already present in this repository.

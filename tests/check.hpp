@@ -21,8 +21,8 @@ inline int& check_failures() {
 
 #define CHECK_EQ(actual, expected)                                                       \
   do {                                                                                   \
-    const auto& actual_value = (actual);                                                 \
-    const auto& expected_value = (expected);                                             \
+    const auto actual_value = (actual);                                                  \
+    const auto expected_value = (expected);                                              \
     if (!(actual_value == expected_value)) {                                             \
       std::cerr << __FILE__ << ":" << __LINE__ << ": CHECK_EQ failed: " #actual          \
                 << " == " #expected "\n  actual:   " << actual_value                     \

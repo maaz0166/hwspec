@@ -11,8 +11,8 @@ namespace {
 
 // Fake sections with fixed output, so the test does not depend on the machine it runs on.
 const std::vector<Section> kSections = {
-    {"cpu", "CPU", false, [] { return SectionReport{"CPU", {{"Name", "Fake CPU"}}}; }},
-    {"mem", "Memory", false, [] { return SectionReport{"Memory", {{"Total", "16.0 GB"}}}; }},
+    {"cpu", "CPU", false, [] { return SectionReport{"CPU", {{"Name", "Fake CPU"}}}; }, {}, {}},
+    {"mem", "Memory", false, [] { return SectionReport{"Memory", {{"Total", "16.0 GB"}}}; }, {}, {}},
 };
 
 struct Result {
@@ -76,13 +76,25 @@ void test_unknown_option() {
   CHECK(contains(r.err, "unknown option '--bogus'"));
 }
 
-void test_detail_prints_a_note_and_still_works() {
+void test_detail_remains_compatible_with_m1_callbacks() {
   const Result r = run_with({"--cpu", "-d"});
   CHECK_EQ(r.code, 0);
   CHECK_EQ(r.out, std::string("CPU\n  Name  Fake CPU\n"));
-  CHECK(contains(r.err, "not available yet"));
+  CHECK(r.err.empty());
 }
 
+void test_json_fake_sections() {
+  const Result r=run_with({"--mem","--json"});
+  CHECK_EQ(r.code,0);
+  CHECK_EQ(r.out,std::string("{\"mem\":{\"Total\":\"16.0 GB\"}}\n"));
+  CHECK(r.err.empty());
+}
+void test_json_with_detail_in_any_order() {
+  const Result r=run_with({"-d","--json","--cpu"});
+  CHECK_EQ(r.code,0);
+  CHECK(contains(r.out,"\"cpu\""));
+  CHECK(!contains(r.out,"\"mem\""));
+}
 }  // namespace
 
 int main() {
@@ -93,6 +105,8 @@ int main() {
   test_version();
   test_help_lists_sections();
   test_unknown_option();
-  test_detail_prints_a_note_and_still_works();
+  test_detail_remains_compatible_with_m1_callbacks();
+  test_json_fake_sections();
+  test_json_with_detail_in_any_order();
   return finish();
 }

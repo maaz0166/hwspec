@@ -14,10 +14,21 @@ jobs:
         run: cmake -S . -B build
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --parallel
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
 
-      - name: Smoke test the executable
-        run: .\build\Release\hwspec.exe --version
+      - name: Smoke test text and JSON
+        shell: pwsh
+        run: |
+          .\build\Release\hwspec.exe --version
+          .\build\Release\hwspec.exe --cpu --mem
+          .\build\Release\hwspec.exe --battery -d
+          python tests/smoke_json.py .\build\Release\hwspec.exe
+
+      - name: Package executable (CI artifact, not an M5 release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hwspec-m2-windows-x64
+          path: build/Release/hwspec.exe

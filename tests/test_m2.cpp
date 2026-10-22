@@ -1,0 +1,72 @@
+#include "check.hpp"
+#include "hwspec/format.hpp"
+#include "hwspec/json.hpp"
+#include "hwspec/sections.hpp"
+#include <string>
+
+using namespace hwspec;
+namespace {
+bool has(const std::string& content,const std::string& text){return content.find(text)!=std::string::npos;}
+void section_registry(){
+  const auto& sections=default_sections();
+  CHECK_EQ(sections.size(),static_cast<std::size_t>(7));
+  for(const auto& name:{"cpu","mem","os","gpu","disk","net","battery"}){
+    bool found=false;
+    for(const auto& s:sections)if(s.flag==name){
+      found=true;CHECK(!s.requires_admin);CHECK(static_cast<bool>(s.collect_detail));CHECK(static_cast<bool>(s.collect_json));
+    }
+    CHECK(found);
+  }
+}
+void cpu_details(){
+  CpuInfo c;c.name="Test CPU";c.base_clock_ghz=2.0;c.max_boost_clock_ghz=3.4;
+  c.virtualization_enabled=false;c.l3_cache_bytes=8*1024*1024;
+  const auto r=format_cpu(c,true);
+  CHECK_EQ(r.fields[0].value,std::string("Test CPU"));
+  CHECK_EQ(r.fields[4].value,std::string("3.40 GHz"));
+  CHECK_EQ(r.fields[7].value,std::string("Unknown")); // L1 not reported
+  const std::string j=json_cpu(c,true);
+  CHECK(has(j,"\"max_boost_clock_ghz\":3.4"));
+  CHECK(has(j,"\"virtualization_enabled\":false"));
+  CHECK(has(j,"\"l1_cache_bytes\":null"));
+  CHECK(!has(json_cpu(c,false),"virtualization_enabled"));
+}
+void memory_details(){
+  MemInfo m;m.total_bytes=16ULL*1024*1024*1024;m.available_bytes=8ULL*1024*1024*1024;
+  MemoryModule module;module.slot="DIMM 0";module.size_bytes=8ULL*1024*1024*1024;
+  module.type="DDR4";module.speed_mhz=3200;m.modules.push_back(module);
+  CHECK(has(render_text({format_mem(m,true)}),"DDR4"));
+  const auto j=json_mem(m,true);
+  CHECK(has(j,"\"modules\":[{"));CHECK(has(j,"\"used_bytes\":8589934592"));
+}
+void gpu_and_disks(){
+  GpuInfo g;g.adapters.push_back(GpuAdapter{});
+  CHECK(has(json_gpu(g,false),"\"dedicated_bytes\":null"));
+  DiskInfo d;DiskDrive disk;disk.letter="C:\\";disk.size_bytes=1000;d.drives.push_back(disk);
+  CHECK(has(json_disk(d,true),"\"status\":\"not_implemented\""));
+  CHECK(has(render_text({format_disk(d,true)}),"Not implemented (M3"));
+  NetInfo n;NetAdapter adapter;adapter.addresses={"10.0.0.5","fe80::1"};n.adapters.push_back(adapter);
+  CHECK(has(json_net(n,true),"fe80::1"));
+}
+void batteries(){
+  BatteryInfo b;
+  CHECK(has(render_text({format_battery(b,true)}),"Unknown"));
+  b.present=false;
+  CHECK(has(render_text({format_battery(b,true)}),"No battery detected"));
+  b.present=true;b.charge_percent=72;b.design_capacity_wh=50.0;b.full_charge_capacity_wh=40.0;
+  b.cycle_count=300;
+  CHECK(has(render_text({format_battery(b,true)}),"80.0%"));
+  CHECK(has(json_battery(b,true),"\"health_percent\":80"));
+  b.design_capacity_wh=0.0;
+  CHECK(has(json_battery(b,true),"\"health_percent\":null"));
+  CHECK(!has(json_battery(b,false),"health_percent"));
+}
+void json_escaping(){
+  CHECK_EQ(json_quote("ab\"\\\n\t"),std::string("\"ab\\\"\\\\\\n\\t\""));
+  CHECK_EQ(json_quote(std::string(1,'\x01')),std::string("\"\\u0001\""));
+}
+} // namespace
+int main(){
+  section_registry();cpu_details();memory_details();gpu_and_disks();batteries();json_escaping();
+  return finish();
+}

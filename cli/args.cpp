@@ -22,6 +22,10 @@ Args parse_args(const std::vector<std::string>& args, const std::vector<Section>
       result.version = true;
     } else if (arg == "--detail" || arg == "-d") {
       result.detail = true;
+    } else if (arg == "--json") {
+      result.json = true;
+    } else if (arg == "--no-color") {
+      result.no_color = true;
     } else if (arg == "--all") {
       result.all = true;
     } else if (arg.rfind("--", 0) == 0 && is_known(arg.substr(2), known)) {

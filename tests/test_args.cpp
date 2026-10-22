@@ -7,8 +7,8 @@ using namespace hwspec::cli;
 namespace {
 
 const std::vector<Section> kSections = {
-    {"cpu", "CPU", false, [] { return SectionReport{}; }},
-    {"mem", "Memory", false, [] { return SectionReport{}; }},
+    {"cpu", "CPU", false, [] { return SectionReport{}; }, {}, {}},
+    {"mem", "Memory", false, [] { return SectionReport{}; }, {}, {}},
 };
 
 void test_empty() {
@@ -42,6 +42,8 @@ void test_other_flags() {
   CHECK(parse_args({"-v"}, kSections).version);
   CHECK(parse_args({"--detail"}, kSections).detail);
   CHECK(parse_args({"-d"}, kSections).detail);
+  CHECK(parse_args({"--json"}, kSections).json);
+  CHECK(parse_args({"--no-color"}, kSections).no_color);
 }
 
 void test_detail_with_section() {

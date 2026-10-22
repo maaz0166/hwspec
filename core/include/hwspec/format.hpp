@@ -1,23 +1,17 @@
 #pragma once
-
 #include <cstdint>
 #include <string>
-
 #include "hwspec/report.hpp"
 #include "hwspec/types.hpp"
 
 namespace hwspec {
-
-// "15.9 GB". Windows (Task Manager, Settings) divides by 1024 and still writes GB,
-// so we follow that convention to show the same numbers people already know.
 std::string format_bytes(std::uint64_t bytes);
-
-// "3.40 GHz"
 std::string format_ghz(double ghz);
-
-// Each formatter turns collected data into a report. Missing values become "Unknown".
-SectionReport format_cpu(const CpuInfo& info);
-SectionReport format_mem(const MemInfo& info);
-SectionReport format_os(const OsInfo& info);
-
+SectionReport format_cpu(const CpuInfo& info, bool detail = false);
+SectionReport format_mem(const MemInfo& info, bool detail = false);
+SectionReport format_os(const OsInfo& info, bool detail = false);
+SectionReport format_gpu(const GpuInfo& info, bool detail = false);
+SectionReport format_disk(const DiskInfo& info, bool detail = false);
+SectionReport format_net(const NetInfo& info, bool detail = false);
+SectionReport format_battery(const BatteryInfo& info, bool detail = false);
 }  // namespace hwspec

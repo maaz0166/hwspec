@@ -22,7 +22,7 @@ jobs:
         run: |
           if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
             Install-Module Microsoft.WinGet.Client -Force -Repository PSGallery
-            Repair-WinGetPackageManager -Force -Latest
+            Repair-WinGetPackageManager -AllUsers -Force -Latest
             "$env:LOCALAPPDATA\Microsoft\WindowsApps" >> $env:GITHUB_PATH
           }
       - name: Build, test and package standalone release

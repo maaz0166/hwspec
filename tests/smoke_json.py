@@ -25,10 +25,16 @@ assert tuple(detailed) == sections
 assert "max_boost_clock_ghz" in detailed["cpu"]
 assert "modules" in detailed["mem"]
 assert "uptime_seconds" in detailed["os"]
-assert detailed["disk"]["disk_health"]["status"] == "not_implemented"
+assert detailed["disk"]["disk_health"]["status"] in ("requires_admin", "unknown", "available")
+assert isinstance(detailed["disk"]["disk_health"]["devices"], list)
+skipped = read("--disk", "-d", "--json", "--skip-admin", "--pause")
+assert skipped["disk"]["disk_health"] == {"status": "requires_admin", "devices": []}
+assert "disk_health" not in read("--disk", "--json")["disk"]
 assert "health_percent" in detailed["battery"]
+for adapter in detailed["net"]["adapters"]:
+    assert adapter["link_speed_bps"] != 2**64 - 1, adapter
 
 battery = read("--battery", "-d", "--json")
 assert list(battery) == ["battery"]
 
-print("hwspec M2 JSON smoke test passed")
+print("hwspec JSON smoke test passed")

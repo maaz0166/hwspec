@@ -3,8 +3,11 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: M2 source implemented (v0.2.0).** M0 and M1 are retained; M3 administrator
-handling, M4 Python bindings, M5 installers/releases, and M6 extras are not included.
+**Status: M3 source implemented (v0.3.0).** Native Windows MinGW build, unit tests,
+JSON smoke checks and laptop battery collection have been exercised locally.
+M2 still needs a second PC and manual UI comparisons; M3 still needs native UAC
+and elevated hardware acceptance. See [M2 validation](docs/M2_VALIDATION.md) and
+[M3 validation](docs/M3_VALIDATION.md). M4–M6 have not started.
 
 ## Commands
 
@@ -16,6 +19,8 @@ hwspec --battery
 hwspec --battery -d            # capacity, health and cycles when available
 hwspec --cpu -d                # clocks, caches, CPUID, virtualization
 hwspec --all --detail          # detailed view for every section
+hwspec --disk -d --skip-admin  # disk details without privileged data or prompts
+hwspec --disk -d --elevate     # reopen with Windows UAC; child text console pauses
 hwspec --all --json            # machine-readable JSON
 hwspec --battery --json -d     # typed JSON, null for unsupported fields
 hwspec --no-color              # accepted; M2 text is uncolored
@@ -45,10 +50,24 @@ metadata rely on read-only WMI. WMI and device firmware may omit properties.
 A battery must report **absolute mWh** values for health to be calculated; a
 cycle count of zero or capacity reported in relative units remains unknown.
 
-**Important M2/M3 boundary:** the disk health field is expressly marked
-`Not implemented (M3: admin-only)` in detailed text; in JSON it reports
-`"disk_health":{"status":"not_implemented","milestone":"M3"}`. M2 does
-not request administrator privileges. This is **not** a SMART status result.
+## Administrator handling (M3)
+
+Only detailed disk health needs administrator rights. Normal `--disk` never
+prompts. In an interactive text console, `--disk -d` offers skip (default), reopen
+as administrator, or cancel. JSON, redirected runs and `--skip-admin` skip
+privileged data without prompting. `--elevate` explicitly opens a new elevated
+console with the same flags and `--pause`; its output stays in that console.
+Declining UAC continues the original command with privileged data skipped.
+`--pause` waits for Enter only in an interactive text console.
+
+Detailed JSON contains `disk.disk_health.status`: `requires_admin` when skipped,
+`unknown` when the query yields no usable values, and `available` when active
+WMI device instances report a prediction. `devices` contains `instance_name`
+and `failure_predicted` (boolean or null). Devices are reported separately from
+logical volumes to avoid guessing mappings. A false prediction means no failure
+is predicted; it does not guarantee a healthy disk. NVMe/USB/RAID drivers may
+not support the legacy WMI SMART provider. Text uses `Unknown` for missing data.
+`--skip-admin` also skips SMART in an already elevated shell.
 
 Maximum boost clock is read from CPUID leaf 0x16 where available. Some CPUs do
 not report it. The fallback registry MHz value for base clock may itself be
@@ -95,7 +114,7 @@ hardware acceptance check.
 - `core/src/stub/`: portable placeholder collectors for Linux test builds
 - `core/src/format.cpp`, `json.cpp`: hardware-independent output functions
 - `cli/`: arguments and reusable `run()` function (exe + future Python binding)
-- `tests/`: CLI, format, JSON, hardware checks and smoke script
+- `tests/`: CLI, admin decision table, format, JSON, hardware checks and smoke script
 - `python/`: the original PyPI name-reservation placeholder; M4 binding not yet started
 
 All section collectors return plain data without printing. Windows code stays

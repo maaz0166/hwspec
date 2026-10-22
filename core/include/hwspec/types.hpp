@@ -48,7 +48,17 @@ struct DiskDrive {
   std::optional<std::string> letter, file_system, model, media_type, bus, firmware;
   std::optional<std::uint64_t> size_bytes, free_bytes;
 };
-struct DiskInfo { std::vector<DiskDrive> drives; };
+enum class DiskHealthStatus { requires_admin, unknown, available };
+struct DiskHealthDevice {
+  std::optional<std::string> instance_name;
+  std::optional<bool> failure_predicted;
+};
+struct DiskInfo {
+  std::vector<DiskDrive> drives;
+  DiskHealthStatus health_status = DiskHealthStatus::requires_admin;
+  // WMI physical-device instances; never guessed from logical volume order.
+  std::vector<DiskHealthDevice> health_devices;
+};
 
 struct NetAdapter {
   std::optional<std::string> name, status, mac, gateway;

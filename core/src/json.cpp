@@ -100,7 +100,21 @@ std::string json_disk(const DiskInfo& i,bool d){
       o.add("firmware",j(x.firmware));o.add("file_system",j(x.file_system));}
     a+=o.done();
   }a+="]";Object r;r.add("drives",a);
-  if(d)r.add("disk_health","{\"status\":\"not_implemented\",\"milestone\":\"M3\"}");
+  if(d){
+    Object health;
+    health.add("status",json_quote(i.health_status==DiskHealthStatus::requires_admin?"requires_admin":
+                                  i.health_status==DiskHealthStatus::available?"available":"unknown"));
+    std::string devices="[";
+    for(std::size_t n=0;n<i.health_devices.size();++n){
+      if(n)devices+=",";
+      const auto& device=i.health_devices[n];Object entry;
+      entry.add("instance_name",j(device.instance_name));
+      entry.add("failure_predicted",j(device.failure_predicted));
+      devices+=entry.done();
+    }
+    health.add("devices",devices+"]");
+    r.add("disk_health",health.done());
+  }
   return r.done();
 }
 std::string json_net(const NetInfo& i,bool d){

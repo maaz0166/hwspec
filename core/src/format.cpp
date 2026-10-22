@@ -122,7 +122,7 @@ SectionReport format_gpu(const GpuInfo& i,bool detail){
 
 SectionReport format_disk(const DiskInfo& i,bool detail){
   SectionReport r{"Disk",{}};
-  if(i.drives.empty()){r.fields.push_back({"Drives","Unknown"});return r;}
+  if(i.drives.empty())r.fields.push_back({"Drives","Unknown"});
   for(const auto& d:i.drives){
     const auto name=show(d.letter);
     r.fields.push_back({name+" size",bytes(d.size_bytes)});
@@ -133,7 +133,16 @@ SectionReport format_disk(const DiskInfo& i,bool detail){
       r.fields.push_back({name+" bus",show(d.bus)});
       r.fields.push_back({name+" firmware",show(d.firmware)});
       r.fields.push_back({name+" file system",show(d.file_system)});
-      r.fields.push_back({name+" health","Not implemented (M3: admin-only)"});
+    }
+  }
+  if(detail){
+    r.fields.push_back({"Disk health",i.health_status==DiskHealthStatus::requires_admin?"requires admin":
+                                   i.health_status==DiskHealthStatus::available?"SMART failure prediction":"Unknown"});
+    for(std::size_t n=0;n<i.health_devices.size();++n){
+      const auto& device=i.health_devices[n];
+      r.fields.push_back({"SMART "+std::to_string(n+1)+" device",show(device.instance_name)});
+      r.fields.push_back({"SMART "+std::to_string(n+1)+" prediction",device.failure_predicted?
+                         (*device.failure_predicted?"Failure predicted":"No failure predicted"):"Unknown"});
     }
   }
   return r;

@@ -1,5 +1,6 @@
 #include "hwspec/collectors.hpp"
 #include "registry.hpp"
+#include "wmi.hpp"
 #include <windows.h>
 #include <winioctl.h>
 #include <array>
@@ -88,6 +89,30 @@ DiskInfo collect_disk(bool detail){
       if(type!=DRIVE_REMOTE)physical_disk_details(path,disk);
     }
     info.drives.push_back(std::move(disk));
+  }
+  return info;
+}
+
+DiskInfo collect_disk_with_health(bool detail, bool allow_admin){
+  DiskInfo info=collect_disk(detail);
+  if(!detail || !allow_admin)return info;
+  info.health_status=DiskHealthStatus::unknown;
+  const auto rows=win::wmi_query(
+      L"SELECT InstanceName, PredictFailure FROM MSStorageDriver_FailurePredictStatus WHERE Active = TRUE",
+      {"InstanceName","PredictFailure"},L"ROOT\\WMI");
+  for(const auto& row:rows){
+    DiskHealthDevice device;
+    const auto name=row.find("InstanceName");
+    if(name!=row.end() && !name->second.empty())device.instance_name=name->second;
+    const auto failure=row.find("PredictFailure");
+    if(failure!=row.end()){
+      if(failure->second=="True" || failure->second=="true" || failure->second=="-1" || failure->second=="1")
+        device.failure_predicted=true;
+      else if(failure->second=="False" || failure->second=="false" || failure->second=="0")
+        device.failure_predicted=false;
+    }
+    if(device.failure_predicted.has_value())info.health_status=DiskHealthStatus::available;
+    info.health_devices.push_back(std::move(device));
   }
   return info;
 }

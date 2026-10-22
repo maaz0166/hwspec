@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(hwspec VERSION 0.2.0 LANGUAGES CXX)
+project(hwspec VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -50,9 +50,12 @@ endif()
 hwspec_warnings(hwspec_core)
 
 # ---- CLI library: argument parsing and run(), shared by the .exe and the tests ----
-add_library(hwspec_cli STATIC cli/args.cpp cli/run.cpp)
+add_library(hwspec_cli STATIC cli/args.cpp cli/admin.cpp cli/run.cpp)
 target_include_directories(hwspec_cli PUBLIC cli)
 target_link_libraries(hwspec_cli PUBLIC hwspec_core)
+if(WIN32)
+  target_link_libraries(hwspec_cli PRIVATE shell32 advapi32)
+endif()
 hwspec_warnings(hwspec_cli)
 
 # ---- The program: a thin main() over the CLI library ----
@@ -78,6 +81,7 @@ if(HWSPEC_BUILD_TESTS)
   hwspec_add_test(test_args)
   hwspec_add_test(test_run)
   hwspec_add_test(test_m2)
+  hwspec_add_test(test_admin)
 
   if(WIN32)
     hwspec_add_test(test_collectors)  # runs the real collectors, so Windows only

@@ -6,6 +6,7 @@
 #include <ws2tcpip.h>
 #include <algorithm>
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -46,7 +47,8 @@ NetInfo collect_net(bool detail){
     }
     if(detail){
       adapter.status=row->OperStatus==IfOperStatusUp?"Connected":"Disconnected";
-      if(row->TransmitLinkSpeed)adapter.link_speed_bps=row->TransmitLinkSpeed;
+      if(row->TransmitLinkSpeed && row->TransmitLinkSpeed!=std::numeric_limits<ULONG64>::max())
+        adapter.link_speed_bps=row->TransmitLinkSpeed;
       if(row->PhysicalAddressLength)adapter.mac=mac_text(row->PhysicalAddress,row->PhysicalAddressLength);
       for(auto* gw=row->FirstGatewayAddress;gw;gw=gw->Next){
         const auto text=ip_text(gw->Address);if(!text.empty() && !adapter.gateway)adapter.gateway=text;

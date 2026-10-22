@@ -1,6 +1,7 @@
 #include <string>
 #include <array>
 #include <cstring>
+#include <windows.h>
 #include <powrprof.h>
 #if defined(_MSC_VER)
 #include <intrin.h>
@@ -132,9 +133,13 @@ void read_caches(CpuInfo& info){
   }
 }
 void read_current_clock(CpuInfo& info){
+  // Documented ProcessorInformation layout (not declared by every Windows SDK).
+  struct ProcessorPowerInformation {
+    ULONG Number, MaxMhz, CurrentMhz, MhzLimit, MaxIdleState, CurrentIdleState;
+  };
   const DWORD count=GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
   if(!count || count>4096)return;
-  std::vector<PROCESSOR_POWER_INFORMATION> processors(count);
+  std::vector<ProcessorPowerInformation> processors(count);
   if(CallNtPowerInformation(ProcessorInformation,nullptr,0,processors.data(),
                             static_cast<ULONG>(processors.size()*sizeof(processors[0])))==0){
     std::uint64_t total=0;unsigned actual=0;

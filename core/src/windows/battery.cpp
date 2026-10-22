@@ -1,5 +1,6 @@
 #include "hwspec/collectors.hpp"
 #include "registry.hpp"
+#include <winioctl.h>
 #include <setupapi.h>
 #include <initguid.h>
 #include <batclass.h>
@@ -8,12 +9,12 @@
 namespace hwspec {
 namespace {
 void read_battery_details(BatteryInfo& info){
-  HDEVINFO devices=SetupDiGetClassDevsW(&GUID_DEVINTERFACE_BATTERY,nullptr,nullptr,
+  HDEVINFO devices=SetupDiGetClassDevsW(&GUID_DEVICE_BATTERY,nullptr,nullptr,
                                         DIGCF_PRESENT|DIGCF_DEVICEINTERFACE);
   if(devices==INVALID_HANDLE_VALUE)return;
   for(DWORD n=0;n<64;++n){
     SP_DEVICE_INTERFACE_DATA interface_data{};interface_data.cbSize=sizeof interface_data;
-    if(!SetupDiEnumDeviceInterfaces(devices,nullptr,&GUID_DEVINTERFACE_BATTERY,n,&interface_data))break;
+    if(!SetupDiEnumDeviceInterfaces(devices,nullptr,&GUID_DEVICE_BATTERY,n,&interface_data))break;
     DWORD bytes=0;
     SetupDiGetDeviceInterfaceDetailW(devices,&interface_data,nullptr,0,&bytes,nullptr);
     if(bytes<sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W))continue;

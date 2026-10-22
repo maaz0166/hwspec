@@ -14,7 +14,8 @@ std::string utf8(const wchar_t* text){
   result.pop_back();
   return result;
 }
-std::vector<WmiRow> wmi_query(const wchar_t* query,const std::vector<std::string>& properties){
+std::vector<WmiRow> wmi_query(const wchar_t* query,const std::vector<std::string>& properties,
+                             const wchar_t* name_space){
   std::vector<WmiRow> results;
   HRESULT hr=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
   const bool undo=SUCCEEDED(hr);
@@ -27,7 +28,7 @@ std::vector<WmiRow> wmi_query(const wchar_t* query,const std::vector<std::string
   hr=CoCreateInstance(CLSID_WbemLocator,nullptr,CLSCTX_INPROC_SERVER,IID_IWbemLocator,
                       reinterpret_cast<void**>(&locator));
   if(SUCCEEDED(hr)){
-    BSTR ns=SysAllocString(L"ROOT\\CIMV2");
+    BSTR ns=SysAllocString(name_space);
     hr=locator->ConnectServer(ns,nullptr,nullptr,nullptr,0,nullptr,nullptr,&service);
     SysFreeString(ns);
   }

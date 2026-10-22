@@ -7,6 +7,7 @@ MemInfo collect_mem(bool detail = false);
 OsInfo collect_os(bool detail = false);
 GpuInfo collect_gpu(bool detail = false);
 DiskInfo collect_disk(bool detail = false);
+DiskInfo collect_disk_with_health(bool detail, bool allow_admin);
 NetInfo collect_net(bool detail = false);
 BatteryInfo collect_battery(bool detail = false);
 }  // namespace hwspec

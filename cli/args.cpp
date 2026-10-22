@@ -26,6 +26,12 @@ Args parse_args(const std::vector<std::string>& args, const std::vector<Section>
       result.json = true;
     } else if (arg == "--no-color") {
       result.no_color = true;
+    } else if (arg == "--skip-admin") {
+      result.skip_admin = true;
+    } else if (arg == "--elevate") {
+      result.elevate = true;
+    } else if (arg == "--pause") {
+      result.pause = true;
     } else if (arg == "--all") {
       result.all = true;
     } else if (arg.rfind("--", 0) == 0 && is_known(arg.substr(2), known)) {

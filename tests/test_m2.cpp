@@ -14,6 +14,8 @@ void section_registry(){
     bool found=false;
     for(const auto& s:sections)if(s.flag==name){
       found=true;CHECK(!s.requires_admin);CHECK(static_cast<bool>(s.collect_detail));CHECK(static_cast<bool>(s.collect_json));
+      CHECK(s.detail_requires_admin==(s.flag=="disk"));
+      if(s.detail_requires_admin){CHECK(static_cast<bool>(s.collect_detail_admin));CHECK(static_cast<bool>(s.collect_json_admin));}
     }
     CHECK(found);
   }
@@ -43,8 +45,8 @@ void gpu_and_disks(){
   GpuInfo g;g.adapters.push_back(GpuAdapter{});
   CHECK(has(json_gpu(g,false),"\"dedicated_bytes\":null"));
   DiskInfo d;DiskDrive disk;disk.letter="C:\\";disk.size_bytes=1000;d.drives.push_back(disk);
-  CHECK(has(json_disk(d,true),"\"status\":\"not_implemented\""));
-  CHECK(has(render_text({format_disk(d,true)}),"Not implemented (M3"));
+  CHECK(has(json_disk(d,true),"\"status\":\"requires_admin\""));
+  CHECK(has(render_text({format_disk(d,true)}),"requires admin"));
   NetInfo n;NetAdapter adapter;adapter.addresses={"10.0.0.5","fe80::1"};n.adapters.push_back(adapter);
   CHECK(has(json_net(n,true),"fe80::1"));
 }

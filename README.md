@@ -3,10 +3,10 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: M4 source implemented (v0.4.0).** Native Windows MSVC/MinGW tests and
-JSON smoke checks pass. A CPython 3.12 wheel built from the source archive,
-installed into a clean environment and passed all 15 Python tests. The wheel
-matrix and registry publication still need verification; see
+**Status: M4 delivered and published (v0.4.0).** Native Windows MSVC/MinGW tests
+and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
+local build/repair and installed-package validation. TestPyPI and PyPI each
+passed a fresh CPython 3.12 installation and all 15 Python tests; see
 [M4 validation](docs/M4_VALIDATION.md). Remaining second-PC, UI and user-observed
 UAC checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
 [M3 validation](docs/M3_VALIDATION.md). M5/M6 have not started.
@@ -84,6 +84,15 @@ unknown fields do not mean zero hardware.
 
 ### Python package (M4)
 
+Install the published package with Windows x64 CPython 3.9–3.14:
+
+```powershell
+python -m pip install hwspec==0.4.0
+hwspec --cpu --json
+```
+
+The release is available on [PyPI](https://pypi.org/project/hwspec/0.4.0/).
+
 Build from the repository root; packaging metadata is in root `pyproject.toml`
 so the source archive includes the shared C++ implementation.
 
@@ -102,8 +111,8 @@ data = hwspec.collect(["cpu", "mem"], detail=True)
 Binary wheels need Windows x64 Python; source builds also need a C++ toolchain
 and CMake. The API never prompts or elevates and uses `None` for missing data.
 See [Python package usage](python/README.md) and
-[M4 verification/publication status](docs/M4_VALIDATION.md). The local artifacts
-have not been uploaded to TestPyPI or PyPI.
+[M4 verification/publication status](docs/M4_VALIDATION.md). The six repaired
+wheels and source archive are published on TestPyPI and PyPI with matching hashes.
 
 For distribution, use the repaired wheels produced by cibuildwheel, as the
 workflow does. Locally validated CPython 3.9–3.14 distribution wheels are in

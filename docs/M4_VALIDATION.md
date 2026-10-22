@@ -1,6 +1,6 @@
 # M4 Python package
 
-M4 source is implemented as v0.4.0. The user requested proceeding with M4 on
+M4 is delivered and published as v0.4.0. The user requested proceeding with M4 on
 2026-10-22 while the externally dependent M2/M3 checks remain documented.
 Those milestones have not been silently marked fully verified.
 
@@ -30,7 +30,8 @@ and the Python package remain under `python/`.
 
 Windows 11 Pro x64, Dell Latitude 5500, Python 3.12.10, MSVC 19.44.35217.0.
 Build environment tools: pybind11 3.1.0, scikit-build-core 1.1.1, build 1.6.1,
-twine 7.0.0, cibuildwheel 4.3.3. No package was published.
+twine 7.0.0, cibuildwheel 4.3.3. The initial local checks below preceded the
+approved publication recorded later in this report.
 
 ```powershell
 python -m venv build/python-build-env
@@ -161,19 +162,40 @@ checks metadata, and uploads downloadable CI artifacts. It does not publish
 packages. All six interpreter versions passed the local build/test path above;
 execution on a GitHub-hosted runner has not been observed in this session.
 
-TestPyPI upload, clean-environment install from TestPyPI, PyPI upload and install
-from PyPI are still pending. These require explicit publication authorization
-and access to the package's publishing account. Successful local wheel tests do
-not claim that a public registry release exists.
+### Approved publication and registry installation: 2026-10-22
 
-No local `.pypirc`, publishing environment variables or matching keyring
-credentials were available during this session. Public registry metadata still
-listed 0.0.1, with no 0.4.0 release; account ownership has not been verified.
-Do not paste API tokens into chat or put them in commands/history. Configure
-credentials locally for each registry or set up approved trusted publishing.
+The user saved separate registry credentials in the local keyring and explicitly
+authorized TestPyPI publication, verification, then PyPI publication. Credentials
+were used through Twine's keyring integration and were never displayed.
 
-After publication is authorized and credentials are configured, upload only the
-repaired wheels and source archive:
+- [TestPyPI 0.4.0](https://test.pypi.org/project/hwspec/0.4.0/) accepted all six
+  repaired wheels and the source archive. A fresh CPython 3.12 environment,
+  `build/testpypi-install/`, installed from TestPyPI with caching disabled and
+  no dependencies or source builds. All 15 installed-package tests passed from
+  outside the checkout, including standalone parity; `pip check` passed.
+- Only after that verification, the identical seven files were uploaded to
+  [PyPI 0.4.0](https://pypi.org/project/hwspec/0.4.0/). A separate fresh environment,
+  `build/pypi-install/`, installed from PyPI and passed the same 15 tests and
+  dependency check. The suite exercises the installed `hwspec` command, module
+  command, Python API, JSON, missing-data handling and invalid-input behavior.
+- Each registry's version-specific JSON metadata lists exactly the seven expected
+  files. All seven SHA-256 hashes on each registry match the tested local manifest.
+  No raw development wheel or native validation capture was uploaded.
+- Published source SHA-256:
+  `c8214a755e253d4193c0d70b103f8acca54eb64992358f17b06a27a93da7ca11`.
+  The published CPython 3.12 wheel retains the SHA-256 recorded above.
+- Local evidence includes `build/testpypi-published-files.json`,
+  `build/pypi-published-files.json`, and each registry's pip installation report
+  under `build/`. These reports contain public package metadata, not credentials.
+
+The offline bundle and source archive retain their pre-publication documentation
+snapshot. Their release bytes were preserved; this report records the later
+successful registry publication. GitHub-hosted workflow execution remains
+unobserved and is not inferred from these local results.
+
+Commands used for the TestPyPI stage (the upload also used `--non-interactive`
+and `--disable-progress-bar`; installation also used pip `--isolated`,
+`--no-cache-dir`, `--report` and `--disable-pip-version-check`):
 
 ```powershell
 ./build/python-build-env/Scripts/python.exe -m twine upload --repository testpypi dist/cibuildwheel/*.whl dist/hwspec-0.4.0.tar.gz
@@ -184,9 +206,8 @@ python -m venv build/testpypi-install
 ./build/testpypi-install/Scripts/python.exe -c "import hwspec; print(hwspec.collect('cpu'))"
 ```
 
-Run `tests/test_python.py` with that installed interpreter from outside the
-checkout, as described above. Only after TestPyPI installation/tests pass and
-production publication is approved, upload the same bytes to PyPI:
+After the TestPyPI suite and dependency check passed, the same files were
+published to PyPI and installed with the equivalent isolated/no-cache options:
 
 ```powershell
 ./build/python-build-env/Scripts/python.exe -m twine upload dist/cibuildwheel/*.whl dist/hwspec-0.4.0.tar.gz
@@ -196,9 +217,11 @@ python -m venv build/pypi-install
 ./build/pypi-install/Scripts/python.exe -m hwspec --all --json
 ```
 
-Repeat the installed-package suite against the PyPI installation. These commands
-are a runbook, not evidence of uploads. Do not automatically publish on a normal
-Git push or pull request.
+Both installations were tested using `tests/test_python.py` with
+`HWSPEC_NATIVE_EXE` set to the verified native executable, from outside the
+checkout. Each ran 15 tests with no failures or skips. Do not repeat these
+uploads for the existing version; publishing future releases requires approval.
+Normal Git pushes and pull requests do not publish packages.
 
 ## Remaining acceptance work
 

@@ -1,8 +1,8 @@
 # hwspec
 
 Windows 10/11 x64 hardware specifications, backed by the same C++ core as the
-standalone executable. Python 3.9+ on Windows x64 is required. Version 0.4.0
-implements the native binding; publication to TestPyPI/PyPI is a separate step.
+standalone executable. Python 3.9+ on Windows x64 is required. Version 0.4.1
+includes corrected total CPU cache sizes and configured RAM speed reporting.
 
 ## Command line
 

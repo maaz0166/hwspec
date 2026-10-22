@@ -1,6 +1,7 @@
 # M4 Python package
 
-M4 is delivered and published as v0.4.0. The user requested proceeding with M4 on
+M4 is delivered and published, initially as v0.4.0 and now v0.4.1 with the cache
+and configured-RAM-speed fixes. The user requested proceeding with M4 on
 2026-10-22 while the externally dependent M2/M3 checks remain documented.
 Those milestones have not been silently marked fully verified.
 
@@ -223,13 +224,75 @@ checkout. Each ran 15 tests with no failures or skips. Do not repeat these
 uploads for the existing version; publishing future releases requires approval.
 Normal Git pushes and pull requests do not publish packages.
 
+## v0.4.1 publication follow-up: 2026-10-22
+
+The user explicitly authorized uploading the latest corrections to TestPyPI and
+PyPI. Version 0.4.1 includes the M2 cache-total and configured-RAM-speed fixes;
+the published 0.4.0 files were preserved. CMake and root package versions both
+changed to 0.4.1. The Python suite now has 16 tests, adding native-versus-Python
+parity for detailed cache totals and memory modules, including configured speed.
+
+All six Windows AMD64 wheels (CPython 3.9.13, 3.10.11, 3.11.9, 3.12.10, 3.13.16
+and 3.14.8) were built from the same frozen source archive with cibuildwheel
+4.3.3. Each repaired wheel passed all 16 installed-package tests, with neither
+failures nor skips. The new native MSVC build passed all seven CTests and JSON
+smoke checks. Earlier native MinGW correctness checks remain recorded in M2.
+
+```powershell
+./build/python-build-env/Scripts/python.exe -m build --sdist --no-isolation --outdir dist/0.4.1
+$env:CIBW_BUILD = 'cp39-win_amd64 cp310-win_amd64 cp311-win_amd64 cp312-win_amd64 cp313-win_amd64 cp314-win_amd64'
+$env:CIBW_CACHE_PATH = 'C:/path/to/repo/build/cibuildwheel-cache'
+$env:CMAKE_BUILD_PARALLEL_LEVEL = '4'
+$env:HWSPEC_NATIVE_EXE = 'C:/path/to/repo/build/msvc/acceptance/hwspec.exe'
+./build/python-build-env/Scripts/python.exe -m cibuildwheel dist/0.4.1/hwspec-0.4.1.tar.gz --platform windows --output-dir dist/0.4.1/wheels
+./build/python-build-env/Scripts/python.exe -m twine check dist/0.4.1/wheels/*.whl dist/0.4.1/hwspec-0.4.1.tar.gz
+```
+
+The interrupted initial process produced no wheels or uploads. The resumed
+six-version command exited 0; its log is `build/v041-wheels.log`. Archive audits
+verified that the source contains both corrections and the new test, and each
+wheel has matching version/tag metadata, its extension, console entry point and
+package-local repaired C++ runtime dependency. All seven metadata checks passed.
+
+Publication proceeded in the authorized order:
+
+1. [TestPyPI 0.4.1](https://test.pypi.org/project/hwspec/0.4.1/) accepted the six
+   repaired wheels and sdist. All seven registry hashes matched the frozen
+   local manifest. A fresh CPython 3.12 environment, `build/v041-testpypi-install`,
+   installed from TestPyPI without cache, dependencies or source compilation.
+   All 16 tests passed from outside the checkout with standalone parity enabled;
+   `pip check` passed. Explicit real-device assertions confirmed L1 256 KiB,
+   L2 1 MiB, L3 6 MiB and configured RAM speed 2400, matching the UI evidence.
+2. Only then were the identical seven files uploaded to
+   [PyPI 0.4.1](https://pypi.org/project/hwspec/0.4.1/). A separate fresh environment,
+   `build/v041-pypi-install`, installed using the normal PyPI package index and
+   passed the same 16 tests, dependency check and real-device assertions. The
+   first installation lookup preceded the simple-index update; after the index
+   advertised 0.4.1, retry succeeded. No duplicate upload was attempted.
+
+Both installations used pip `--isolated`, `--no-cache-dir`, `--only-binary=:all:`,
+`--no-deps`, an explicit registry index URL, and installation reports under
+`build/v041-*-install-report.json`. All seven public file names and SHA-256
+hashes on **each** registry match `dist/0.4.1/manifest.json`. Published source:
+`01c10e18c5f2c73e37b2abaaa06214f943ff84f0917522c103eddf84def9b6f2`.
+Published CPython 3.12 wheel:
+`ef01b5f4569e277f71333740e85ed641fbccc1d01ca60e8f4cee1765859b6a8d`.
+Registry metadata captures are `build/v041-testpypi-published-files.json` and
+`build/v041-pypi-published-files.json`. Credentials stayed in the local keyring.
+
+```powershell
+python -m pip install --upgrade hwspec==0.4.1
+hwspec --cpu --mem -d --json
+```
+
+These are local build and real registry-installation results. No GitHub-hosted
+run or additional physical PC is inferred from them. The second-PC and observed
+UAC-rejection acceptance items remain open.
+
 ## Remaining acceptance work
 
-- Later M2 Task Manager comparison found source/native cache-total and configured
-  RAM-speed corrections, recorded in [M2 validation](./M2_VALIDATION.md). They
-  postdate this published 0.4.0 release. The original six-version wheel results
-  and registry hashes describe the published bytes; no replacement upload or
-  new Python package release was performed for these later changes.
+- M2 Task Manager corrections postdate 0.4.0 and are included in published
+  0.4.1, as recorded above. Historical 0.4.0 results and hashes remain unchanged.
 - All six local wheel builds/tests passed; the GitHub-hosted workflow has not
   yet been observed running against this change.
 - Python UAC, preserved virtual environment/arguments, pause and Enter-to-close

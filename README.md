@@ -3,13 +3,13 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: M4 delivered and published (v0.4.0).** Native Windows MSVC/MinGW tests
+**Status: M4 delivered and published (v0.4.1).** Native Windows MSVC/MinGW tests
 and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
 local build/repair and installed-package validation. TestPyPI and PyPI each
-passed a fresh CPython 3.12 installation and all 15 Python tests; see
-[M4 validation](docs/M4_VALIDATION.md). Task Manager comparison subsequently found
-and fixed native CPU cache totals and configured RAM speed; these newer source
-fixes are not in the published Python 0.4.0 artifacts. Remaining second-PC and
+passed a fresh CPython 3.12 installation and all 16 Python tests; see
+[M4 validation](docs/M4_VALIDATION.md). Version 0.4.1 includes corrected total
+CPU cache sizes and configured RAM speed, verified against the native CLI.
+Remaining second-PC and
 user-observed UAC rejection checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
 [M3 validation](docs/M3_VALIDATION.md). M5/M6 have not started.
 
@@ -89,11 +89,11 @@ unknown fields do not mean zero hardware.
 Install the published package with Windows x64 CPython 3.9–3.14:
 
 ```powershell
-python -m pip install hwspec==0.4.0
+python -m pip install --upgrade hwspec==0.4.1
 hwspec --cpu --json
 ```
 
-The release is available on [PyPI](https://pypi.org/project/hwspec/0.4.0/).
+The release is available on [PyPI](https://pypi.org/project/hwspec/0.4.1/).
 
 Build from the repository root; packaging metadata is in root `pyproject.toml`
 so the source archive includes the shared C++ implementation.
@@ -101,7 +101,7 @@ so the source archive includes the shared C++ implementation.
 ```powershell
 python -m pip install build
 python -m build
-python -m pip install ./dist/hwspec-0.4.0-cp312-cp312-win_amd64.whl  # CPython 3.12
+python -m pip install ./dist/hwspec-0.4.1-cp312-cp312-win_amd64.whl  # CPython 3.12
 python -m hwspec --all --json
 ```
 
@@ -118,7 +118,7 @@ wheels and source archive are published on TestPyPI and PyPI with matching hashe
 
 For distribution, use the repaired wheels produced by cibuildwheel, as the
 workflow does. Locally validated CPython 3.9–3.14 distribution wheels are in
-`dist/cibuildwheel/`; their C++ runtime dependency is bundled. Plain `python -m build`
+`dist/0.4.1/wheels/`; their C++ runtime dependency is bundled. Plain `python -m build`
 creates an unrepaired wheel suitable for local development on the build machine.
 
 This project **runs on Windows x64**. CMake tests for formatting/CLI also build

@@ -122,6 +122,16 @@ class PythonPackageTests(unittest.TestCase):
                                 check=True, capture_output=True, encoding="utf-8", timeout=35)
         self.assertEqual(json.loads(result.stdout), hwspec.collect(["cpu", "os"]))
 
+    @unittest.skipUnless(os.environ.get("HWSPEC_NATIVE_EXE"), "standalone comparison is opt-in")
+    def test_corrected_cache_and_configured_ram_parity(self):
+        result = subprocess.run([os.environ["HWSPEC_NATIVE_EXE"], "--cpu", "--mem", "-d", "--json"],
+                                check=True, capture_output=True, encoding="utf-8", timeout=35)
+        native = json.loads(result.stdout)
+        package = hwspec.collect(["cpu", "mem"], detail=True)
+        for key in ("l1_cache_bytes", "l2_cache_bytes", "l3_cache_bytes"):
+            self.assertEqual(package["cpu"][key], native["cpu"][key])
+        self.assertEqual(package["mem"]["modules"], native["mem"]["modules"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

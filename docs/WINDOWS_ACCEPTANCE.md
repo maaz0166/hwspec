@@ -15,7 +15,8 @@ Or extract the validation ZIP, open PowerShell in the extracted directory, and r
 
 The current refreshed kit is `build/hwspec-m2-m3-validation.zip`. It includes
 the cache-total and configured-RAM-speed corrections made after Python 0.4.0
-publication. Testing the existing PyPI wheel does not exercise those fixes.
+publication. Testing the older PyPI 0.4.0 wheel does not exercise those fixes;
+the subsequently published Python 0.4.1 package includes them.
 
 ```powershell
 powershell -NoProfile -File ./verify_windows.ps1 -Executable ./hwspec.exe -OutputDirectory ./results/standard

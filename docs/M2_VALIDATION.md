@@ -185,6 +185,11 @@ its runtime DLLs, the updated runner and acceptance instructions, with no local
 captures. These source/native corrections are newer than the published Python
 0.4.0 artifacts; those registry files were not replaced or republished.
 
+The later authorized Python 0.4.1 release now includes both corrections and
+passed six interpreter builds plus fresh TestPyPI/PyPI installation checks;
+see [M4 validation](./M4_VALIDATION.md). The frozen native validation kit above
+retains its original tested executable/hash.
+
 **Still required:** a second physical Windows PC, including all normal/detail
 sections and comparisons. Intel/AMD, Windows 10 and VM coverage in the broader
 test plan is not established by repeating this laptop's checks. M2 is not fully

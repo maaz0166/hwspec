@@ -3,28 +3,34 @@
 A small Windows 10/11 (x64) CLI for machine specifications, implemented in C++17.
 The name **hwspec** is final; older project-plan examples saying `sysinfo` are placeholders.
 
-**Status: native M5 preview [v0.5.0 published](https://github.com/maaz0166/hwspec/releases/tag/v0.5.0).**
-The standalone executable, portable ZIP, per-user installer and winget manifest
-passed local and GitHub-hosted distribution/installer checks; see [M5 validation](docs/M5_VALIDATION.md).
-The Python package remains published as v0.4.1. Native Windows MSVC/MinGW tests
-and JSON smoke checks pass. All six CPython 3.9–3.14 Windows x64 wheels passed
-local build/repair and installed-package validation. TestPyPI and PyPI each
-passed a fresh CPython 3.12 installation and all 16 Python tests; see
-[M4 validation](docs/M4_VALIDATION.md). Version 0.4.1 includes corrected total
-CPU cache sizes and configured RAM speed, verified against the native CLI.
-Remaining second-PC and
-user-observed UAC rejection checks are tracked in [M2 validation](docs/M2_VALIDATION.md) and
+**Status: 0.5.1 is published on [PyPI](https://pypi.org/project/hwspec/0.5.1/) and as a [native GitHub preview](https://github.com/maaz0166/hwspec/releases/tag/v0.5.1).**
+
+This patch fixes administrator-menu choices in the pip CLI: Windows line endings
+could previously turn an exact `2` or `3` into the default skip action. The menu
+now accepts surrounding whitespace and asks again for invalid input. Upgrade with
+`python -m pip install --upgrade hwspec==0.5.1`.
+
+All six CPython 3.9–3.14 Windows x64 wheels were built/repaired from one frozen
+source archive on GitHub and each passed all 16 installed-package tests. Fresh
+TestPyPI and PyPI installs passed the same suite, dependency checks and real-console
+menu checks. The native release passed seven CTests, distribution smoke checks
+and 28 installer lifecycle checks. Public asset hashes were verified; see
+[0.5.1 validation](docs/V0_5_1_VALIDATION.md).
+
+The earlier cache-total and configured-RAM-speed corrections remain included.
+Broader hardware/second-PC verification and actual user-observed UAC rejection
+remain open in [M2 validation](docs/M2_VALIDATION.md) and
 [M3 validation](docs/M3_VALIDATION.md). M6 remains deferred.
 
 ## Native Windows installation (no Python)
 
-Download the verified v0.5.0 assets from [GitHub Releases](https://github.com/maaz0166/hwspec/releases/tag/v0.5.0).
-Checksums and test evidence are listed in [M5 validation](docs/M5_VALIDATION.md):
+Download the verified v0.5.1 assets from [GitHub Releases](https://github.com/maaz0166/hwspec/releases/tag/v0.5.1).
+Checksums and test evidence are listed in [0.5.1 validation](docs/V0_5_1_VALIDATION.md):
 
-- **Installer:** run `hwspec-0.5.0-windows-x64-setup.exe`. It installs for your
+- **Installer:** run `hwspec-0.5.1-windows-x64-setup.exe`. It installs for your
   current account, with optional PATH setup. Open a new terminal afterward.
-- **Portable:** extract `hwspec-0.5.0-windows-x64.zip` and run `./hwspec.exe`.
-- **Single executable:** `hwspec-0.5.0-windows-x64.exe` can run directly; rename
+- **Portable:** extract `hwspec-0.5.1-windows-x64.zip` and run `./hwspec.exe`.
+- **Single executable:** `hwspec-0.5.1-windows-x64.exe` can run directly; rename
   it to `hwspec.exe` if desired. No separate C++ runtime installation is needed.
 
 ```powershell
@@ -123,8 +129,8 @@ Python is not required by this native build/package pipeline:
 
 ```powershell
 ./packaging/build_release.ps1
-./tests/verify_portable.ps1 -Archive ./dist/native/hwspec-0.5.0-windows-x64.zip
-./tests/verify_installer.ps1 -Installer ./dist/native/hwspec-0.5.0-windows-x64-setup.exe
+./tests/verify_portable.ps1 -Archive ./dist/native/hwspec-0.5.1-windows-x64.zip
+./tests/verify_installer.ps1 -Installer ./dist/native/hwspec-0.5.1-windows-x64-setup.exe
 ```
 
 The release build uses `HWSPEC_STATIC_RUNTIME=ON`; ordinary builds default to
@@ -142,11 +148,11 @@ uploads verified assets, then publishes; it never replaces existing releases.
 Install the published package with Windows x64 CPython 3.9–3.14:
 
 ```powershell
-python -m pip install --upgrade hwspec==0.4.1
+python -m pip install --upgrade hwspec==0.5.1
 hwspec --cpu --json
 ```
 
-The release is available on [PyPI](https://pypi.org/project/hwspec/0.4.1/).
+The release is available on [PyPI](https://pypi.org/project/hwspec/0.5.1/).
 
 Build from the repository root; packaging metadata is in root `pyproject.toml`
 so the source archive includes the shared C++ implementation.
@@ -154,7 +160,7 @@ so the source archive includes the shared C++ implementation.
 ```powershell
 python -m pip install build
 python -m build
-python -m pip install ./dist/hwspec-0.4.1-cp312-cp312-win_amd64.whl  # CPython 3.12
+python -m pip install ./dist/hwspec-0.5.1-cp312-cp312-win_amd64.whl  # CPython 3.12
 python -m hwspec --all --json
 ```
 
@@ -170,8 +176,8 @@ See [Python package usage](python/README.md) and
 wheels and source archive are published on TestPyPI and PyPI with matching hashes.
 
 For distribution, use the repaired wheels produced by cibuildwheel, as the
-workflow does. Locally validated CPython 3.9–3.14 distribution wheels are in
-`dist/0.4.1/wheels/`; their C++ runtime dependency is bundled. Plain `python -m build`
+workflow does. The downloaded GitHub-built CPython 3.9–3.14 distribution wheels are in
+`dist/0.5.1/`; their C++ runtime dependency is bundled. Plain `python -m build`
 creates an unrepaired wheel suitable for local development on the build machine.
 
 This project **runs on Windows x64**. CMake tests for formatting/CLI also build

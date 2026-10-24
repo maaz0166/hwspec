@@ -133,3 +133,13 @@ release did not publish Python 0.5.0. M6 remains deferred.
 References: [Inno Setup](https://jrsoftware.org/isinfo.php),
 [environment notifications](https://jrsoftware.org/ishelp/topic_setup_changesenvironment.htm),
 [winget manifests](https://learn.microsoft.com/en-us/windows/package-manager/package/manifest).
+
+## 0.5.1 publication follow-up
+
+The administrator-menu fix is now published on GitHub, TestPyPI and PyPI.
+[0.5.1 validation](./V0_5_1_VALIDATION.md) records the real pip-console reproduction,
+fixed-reader checks, hosted builds, fresh registry installations and final hashes.
+Final PyPI install verification completed on 2026-10-24. Earlier results and
+immutable artifacts recorded above remain historical evidence; pending-publication
+statements above describe the state before this follow-up. Broader hardware and
+actual user-observed UAC rejection remain open.

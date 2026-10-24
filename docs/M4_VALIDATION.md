@@ -309,3 +309,13 @@ UAC-rejection acceptance items remain open.
 - [pybind11 CMake and Python packaging](https://pybind11.readthedocs.io/en/stable/compiling.html)
 - [scikit-build-core configuration](https://scikit-build-core.readthedocs.io/en/stable/configuration/)
 - [cibuildwheel](https://cibuildwheel.pypa.io/en/stable/)
+
+## 0.5.1 publication follow-up
+
+The administrator-menu fix is now published on GitHub, TestPyPI and PyPI.
+[0.5.1 validation](./V0_5_1_VALIDATION.md) records the real pip-console reproduction,
+fixed-reader checks, hosted builds, fresh registry installations and final hashes.
+Final PyPI install verification completed on 2026-10-24. Earlier results and
+immutable artifacts recorded above remain historical evidence; pending-publication
+statements above describe the state before this follow-up. Broader hardware and
+actual user-observed UAC rejection remain open.
